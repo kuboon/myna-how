@@ -43,27 +43,35 @@ export function CardFront(
       <rect x="20" y="54" width="150" height="10" rx="5" fill="#c7d4ea" />
       <rect x="20" y="74" width="190" height="10" rx="5" fill="#c7d4ea" />
       <rect x="20" y="94" width="120" height="10" rx="5" fill="#c7d4ea" />
-      {/* chip */}
-      <g
-        transform="translate(30 122)"
-        style={handle.props.highlightChip
-          ? { animation: "float 1.6s ease-in-out infinite" }
-          : undefined}
-      >
-        <rect
-          width="58"
-          height="46"
-          rx="8"
-          fill={art.goldLight}
-          stroke={art.gold}
-          stroke-width="3"
-        />
-        <path
-          d="M0 23h58M29 0v46M14 0v12M44 0v12M14 46V34M44 46V34"
-          stroke={art.gold}
-          stroke-width="2.5"
-          fill="none"
-        />
+      {
+        /*
+        chip — placed by the outer group and floated by the inner one: a CSS `transform`
+        animation replaces the SVG `transform` attribute on the same element, which would
+        drop the chip to the card's corner. Its colours are fixed, like the card's, so it
+        stays gold on the light card in dark mode too.
+      */
+      }
+      <g transform="translate(30 122)">
+        <g
+          style={handle.props.highlightChip
+            ? { animation: "float 1.6s ease-in-out infinite" }
+            : undefined}
+        >
+          <rect
+            width="58"
+            height="46"
+            rx="8"
+            fill="#f6d77a"
+            stroke="#d9a520"
+            stroke-width="3"
+          />
+          <path
+            d="M0 23h58M29 0v46M14 0v12M44 0v12M14 46V34M44 46V34"
+            stroke="#d9a520"
+            stroke-width="2.5"
+            fill="none"
+          />
+        </g>
       </g>
       {/* photo */}
       <rect
