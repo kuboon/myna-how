@@ -1,4 +1,4 @@
-import type { Handle } from "@remix-run/component";
+import { css, type Handle } from "@remix-run/component";
 
 import { PhoneSetup } from "../islands/phone_setup.tsx";
 import {
@@ -11,6 +11,7 @@ import {
   Summary,
 } from "../parts.tsx";
 import { SITE_NAME } from "../layout.tsx";
+import { art, color, radius } from "../tokens.ts";
 
 export const title =
   `スマホにマイナカードが入るって、どういうこと？ — ${SITE_NAME}`;
@@ -24,9 +25,10 @@ export default function PhonePage(_handle: Handle) {
     <>
       <ChapterHead chapter="phone">
         <p>
-          いまは、スマホにマイナンバーカードの機能を入れられるよ。Android では
-          2023 年から、iPhone では 2025
-          年から使えるようになったんだ。でも、カードがスマホの中に「すいこまれる」わけじゃない。どうなっているのかな？
+          いまは、スマホにマイナンバーカードの機能を入れられるよ。iPhone では
+          2025 年から。Android では 2023 年から一部の機能が使えていて、2026 年
+          10 月 20 日（予定）からは「Android
+          のマイナンバーカード」として、できることがふえるんだ。でも、カードがスマホの中に「すいこまれる」わけじゃない。どうなっているのかな？
         </p>
       </ChapterHead>
 
@@ -48,7 +50,38 @@ export default function PhonePage(_handle: Handle) {
         スマホの中には、ふつうのアプリとは別に、<strong>
           セキュアエレメント
         </strong>
-        という小さなチップがあるよ。おサイフケータイやタッチ決済でも使われている、マイナンバーカードのチップと同じように「いじられても負けない」金庫なんだ。スマホ用のひみつのカギは、この金庫の中だけにある。
+        という小さなチップがあるよ。おサイフケータイやタッチ決済でも使われている、マイナンバーカードのチップと同じように「いじられても負けない」金庫なんだ。スマホ用のひみつのカギは、この金庫の中だけにある。だから、マイナンバーカードを入れられるのは、決められた強さの金庫を持っているスマホだけなんだ。
+      </p>
+
+      <h2>スマホのマイナカードでできる 2 つのこと</h2>
+      <div mix={usesStyle}>
+        <div mix={useCardStyle}>
+          <p mix={useTitleStyle}>
+            <span aria-hidden="true">🌐</span> ネットで使う
+          </p>
+          <p>
+            マイナポータルへのログインや、ネットでの申しこみ、コンビニで住民票をとるときなど。これまでの章で見てきた「ひみつのカギ」と「証明書」を使うよ。
+          </p>
+          <p mix={useRealStyle}>ほんとうの名前：電子証明書機能</p>
+        </div>
+        <div mix={useCardStyle}>
+          <p mix={useTitleStyle}>
+            <span aria-hidden="true">🧑‍💼</span> 目の前の人に見せる
+          </p>
+          <p>
+            お店や窓口で「本人です」「20
+            さい以上です」「この町に住んでいます」と確かめてもらうとき。お店の人は、デジタル庁の<strong>
+              「マイナンバーカード対面確認アプリ」
+            </strong>でスマホを読みとるよ。
+          </p>
+          <p mix={useRealStyle}>ほんとうの名前：属性証明機能</p>
+        </div>
+      </div>
+      <p>
+        iPhone のマイナンバーカードは、2025 年から両方ができる。Android は、2026
+        年 10 月 20 日（予定）から「Android
+        のマイナンバーカード」になって、Google
+        ウォレットに入れて使えるようになり、「目の前の人に見せる」こともできるようになるよ。
       </p>
 
       <h2>カードはもういらないの？</h2>
@@ -68,10 +101,17 @@ export default function PhonePage(_handle: Handle) {
         <ul>
           <li>
             Android は 2023 年 5
-            月から「スマホ用電子証明書」を搭載できる。iPhone は 2025 年 6 月 24
-            日から、Apple ウォレットに「iPhone
+            月から「スマホ用電子証明書」（署名用・利用者証明用）を搭載でき、マイナポータル、オンライン申請、コンビニ交付などに使える。2026
+            年 10 月 20 日（予定）に「Android のマイナンバーカード」（Google
+            ウォレット）へ刷新され、「属性証明機能」が加わる。リリース日は最終テストの結果で変わることがある。対応するのは一定の基準を満たすセキュリティチップを搭載した端末。
+          </li>
+          <li>
+            iPhone は 2025 年 6 月 24 日から、Apple ウォレットに「iPhone
             のマイナンバーカード」を追加できる（iOS 18.5 以降、iPhone XS
             以降）。
+          </li>
+          <li>
+            属性証明機能により、官民の対面サービスで本人確認・年齢確認・住民確認などを受けられる。読み取る側は、デジタル庁が無償提供する「マイナンバーカード対面確認アプリ」で対応できる。
           </li>
           <li>
             スマートフォンのセキュアエレメント内で新たに鍵ペアを生成し、マイナンバーカードによる本人確認（署名用電子証明書）を経て、J-LIS
@@ -95,6 +135,12 @@ export default function PhonePage(_handle: Handle) {
             label: "デジタル庁：マイナンバーカードのスマートフォン搭載",
           },
           {
+            href:
+              "https://services.digital.go.jp/mynumbercard-android/news/fec690c52f9ffeb35d30f/",
+            label:
+              "デジタル庁：2026年10月20日から「Androidのマイナンバーカード」を開始予定です",
+          },
+          {
             href: "https://myna.go.jp/",
             label: "マイナポータル",
           },
@@ -105,3 +151,24 @@ export default function PhonePage(_handle: Handle) {
     </>
   );
 }
+
+const usesStyle = css({
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(16rem, 1fr))",
+  gap: "0.75rem",
+});
+
+const useCardStyle = css({
+  padding: "0.9rem 1rem",
+  borderRadius: radius.lg,
+  border: `2px solid ${color.border}`,
+  background: art.softBlue,
+  "& p": { marginBlock: "0.4rem" },
+});
+
+const useTitleStyle = css({ fontWeight: 800, fontSize: "1.1rem" });
+
+const useRealStyle = css({
+  color: color.muted,
+  fontSize: "0.85rem !important",
+});
