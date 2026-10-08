@@ -31,9 +31,10 @@ export type ChapterKey =
 export const chapters: readonly Chapter[] = [
   {
     key: "inside",
-    short: "カードの中身",
-    title: "カードの中には何が入っている？",
-    lead: "金色の IC チップの中をのぞいてみよう。入っていないものもあるよ。",
+    short: "IC チップ",
+    title: "IC チップには何ができる？",
+    lead:
+      "金色の IC チップは、メモ帳じゃなくて小さなコンピューター。できること・できないことを見てみよう。",
     icon: "🔍",
   },
   {

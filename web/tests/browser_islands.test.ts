@@ -102,9 +102,18 @@ Deno.test({
       await page.waitForFunction("globalThis.__rmxReady === true", {
         timeout: 10_000,
       });
+      // メモ帳とチップの比べっこ: チップは中身の読み出しをことわる。
+      await clickButton(page, "中身をぜんぶ読ませて");
+      await page.waitForFunction(
+        () => document.body.textContent?.includes("おことわり"),
+        { timeout: 5_000 },
+      );
       await clickButton(page, "チップの中を見る");
       await page.waitForFunction(
-        () => document.querySelectorAll("button[aria-pressed]").length === 6,
+        () =>
+          [...document.querySelectorAll("button")].some((b) =>
+            b.textContent?.includes("あき部屋")
+          ),
         { timeout: 5_000 },
       );
       await clickButton(page, "入っていないもの");

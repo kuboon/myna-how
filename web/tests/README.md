@@ -18,7 +18,7 @@ deno task test:browser    # root から
 ## カバー範囲
 
 - `browser_islands.test.ts`
-  - `/inside` — hydrate 後に「チップの中を見る」を押すと、部屋のとびら（6
-    つ）が出て、「入っていないもの」のパネルが開くこと。
+  - `/inside` — hydrate
+    後に「チップの中を見る」を押すと、部屋のとびらが出て、「入っていないもの」のパネルが開くこと。
   - `/tamper` — 暗証番号パッドで 3 回まちがえると、チップが `locked`
     になること。
