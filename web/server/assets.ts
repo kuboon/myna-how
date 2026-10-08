@@ -2,7 +2,7 @@
  * The browser modules, compiled as one graph.
  *
  * Every entrypoint below goes into a single `Deno.bundle({ codeSplitting: true })` call, which is
- * the point: a module two of them import — the Remix UI runtime, the DPoP session store — is
+ * the point: a module two of them import — the Remix component runtime — is
  * emitted once, into a chunk both import, so it is one module at runtime rather than two copies
  * with two states.
  *
@@ -31,14 +31,6 @@ export const assets = await createAssetServer({
     "hydration.ts",
     // Every island, by where it is rather than by name.
     "islands/*.tsx",
-    // [feature:showcase]
-    "islands/showcase/*.tsx",
-    // [feature:helper] The chat's whole implementation, as an entrypoint rather than an island:
-    // nothing places it, the browser imports it by URL on the first click. See
-    // `client/helper/install.ts`.
-    "helper/panel.ts",
-    // [feature:spa] An entrypoint of its own: it starts a runtime instead of hydrating into one.
-    "spa/entry.ts",
   ],
   basePath: assetsPath,
   mode: "bundle",
