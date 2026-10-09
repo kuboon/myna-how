@@ -161,13 +161,13 @@
 
   h1 {
     font-size: clamp(1.9rem, 4.5vw, 2.6rem);
-    line-height: 1.3;
+    line-height: 1.45;
     margin-top: 0;
   }
 
   h2 {
     font-size: 1.5rem;
-    line-height: 1.4;
+    line-height: 1.55;
     margin-top: 2.75rem;
   }
 
@@ -179,6 +179,18 @@
 
   button {
     font: inherit;
+  }
+
+  /*
+   * Every kanji carries its reading (`client/jsx_runtime.ts`). Small and light, so a line of text
+   * still reads as text; the body's line height already has room for it above each line.
+   */
+  rt {
+    font-size: 0.5em;
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: 0;
+    font-feature-settings: normal;
   }
 
   svg text {

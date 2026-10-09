@@ -150,18 +150,17 @@ export function Layout(handle: Handle<LayoutProps>) {
           <footer mix={footerStyle}>
             <div mix={[bandStyle, wideBandStyle]}>
               <p>
-                このサイトは、マイナンバーカードのしくみを、わかりやすく説明するために作った
+                {"このサイトは、マイナンバーカードのしくみを、わかりやすく説明するために作った"}
                 <strong>非公式</strong>
-                の解説サイトです。たとえ話を使っているので、こまかいところは本物とちがう部分があります。正しい情報は
-                {" "}
+                {"の解説サイトです。たとえ話を使っているので、こまかいところは本物とちがう部分があります。正しい情報は"}
                 <a href="https://www.digital.go.jp/policies/mynumber">
                   デジタル庁
-                </a>{" "}
-                や{" "}
+                </a>
+                {"や"}
                 <a href="https://www.jpki.go.jp/">
                   公的個人認証サービス（J-LIS）
-                </a>{" "}
-                のページを見てね。
+                </a>
+                {"のページを見てね。"}
               </p>
             </div>
           </footer>

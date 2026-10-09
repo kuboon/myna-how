@@ -54,20 +54,20 @@ function newQuestion(not?: string): string {
 }
 
 const captions = [
-  "サイトに「マイナカードでログイン」とおすと、サイトは<毎回ちがう「問題」>を作って、カードに送ってくるよ。",
+  "サイトに「マイナンバーカードでログイン」とおすと、サイトは<毎回ちがう「問題」>を作って、カードに送ってくるよ。",
   "暗証番号が合ったら、チップは中の<ひみつのカギ（秘密鍵）>を使って、問題に<電子署名>をつける。電子署名は、そのカードのひみつのカギでしか作れないしるしなんだ。",
   "チップは、<電子署名>と<電子証明書>をサイトに送る。ひみつのカギは送らない。チップの外には一度も出ないよ。",
-  "サイトは、電子証明書にのっている<公開のカギ（公開鍵）>で、電子署名をたしかめる。公開のカギでは電子署名は作れないけれど、<その電子証明書とペアのひみつのカギで作られたかどうか>はわかるんだ。",
-  "さいごに<J-LIS（カードを発行しているところ）>に「この電子証明書、<本当に J-LIS が出したもの？ まだ使える？>」と聞く。OK なら、ログインできる！",
+  "サイトは、電子証明書にのっている<公開のカギ（公開鍵）>で、電子署名を確かめる。公開のカギでは電子署名は作れないけれど、<その電子証明書とペアのひみつのカギで作られたかどうか>はわかるんだ。",
+  "最後に<J-LIS（カードを発行しているところ）>に「この電子証明書、<本当にJ-LISが出したもの？まだ使える？>」と聞く。OKなら、ログインできる！",
 ];
 
 /** The eavesdropper's story: watch the first login, replay its signature on the second. */
 const replayCaptions = [
-  "<1 回目>：本物のカードの持ち主がログインする。サイトは問題 <{A}> を送る。でも、とちゅうで<のぞき見している人>がいる……！",
-  "チップは問題 {A} に電子署名をつけて返す。サイトがたしかめて OK、ログインできた。でも、のぞき見した人は、その電子署名を<こっそりメモ>してしまった。",
-  "<2 回目>：こんどは、のぞき見した人が、持ち主のふりをしてログインしようとする。サイトは<新しい問題 {B}> を出すよ。",
-  "のぞき見した人は、ひみつのカギを持っていない。だから、メモしておいた<問題 {A} の電子署名>を、そのまま返す。",
-  "サイトがたしかめると……<合わない！> この電子署名は問題 {A} につけたもので、問題 {B} につけたものじゃないから。<毎回ちがう問題を出す>のは、このためなんだ。",
+  "<1回目>：本物のカードの持ち主がログインする。サイトは問題<{A}>を送る。でも、とちゅうで<のぞき見している人>がいる……！",
+  "チップは問題{A}に電子署名をつけて返す。サイトが確かめてOK、ログインできた。でも、のぞき見した人は、その電子署名を<こっそりメモ>してしまった。",
+  "<2回目>：こんどは、のぞき見した人が、持ち主のふりをしてログインしようとする。サイトは<新しい問題{B}>を出すよ。",
+  "のぞき見した人は、ひみつのカギを持っていない。だから、メモしておいた<問題{A}の電子署名>を、そのまま返す。",
+  "サイトが確かめると……<合わない！>この電子署名は問題{A}につけたもので、問題{B}につけたものじゃないから。<毎回ちがう問題を出す>のは、このためなんだ。",
 ];
 
 export const AuthFlow = clientEntry(
@@ -150,7 +150,7 @@ export const AuthFlow = clientEntry(
                     {step >= 3
                       ? (
                         <>
-                          <small>公開のカギでたしかめると…</small>
+                          <small>公開のカギで確かめると…</small>
                           <span
                             key={`v-${who}-${question}`}
                             mix={[verdictStyle, okStyle]}
@@ -201,7 +201,7 @@ export const AuthFlow = clientEntry(
                     ? <PartyHead icon="userX" name="にせものカード" bad />
                     : <PartyHead icon="card" name="カードのチップ" />}
                   <div mix={boardStyle}>
-                    <small>もっているもの</small>
+                    <small>持っているもの</small>
                     <span mix={tokenStyle}>
                       <Icon name="key" />
                       {who === "fake"
@@ -212,7 +212,7 @@ export const AuthFlow = clientEntry(
                       <Icon name="certificate" />
                       {who === "fake"
                         ? "自分で作ったにせの電子証明書"
-                        : "J-LIS が出した電子証明書"}
+                        : "J-LISが出した電子証明書"}
                     </span>
                     {step >= 1
                       ? (
@@ -248,7 +248,7 @@ export const AuthFlow = clientEntry(
                   <strong>
                     にせものカードも、ひみつのカギと公開のカギのペアや、それらしい電子証明書は自分で作れる。
                   </strong>
-                  だから、電子署名のたしかめだけなら通ってしまうんだ。
+                  だから、電子署名を確かめるだけなら通ってしまうんだ。
                 </>
               )
               : null}
@@ -257,9 +257,9 @@ export const AuthFlow = clientEntry(
                 <>
                   <br />
                   <strong>
-                    でも、その電子証明書は J-LIS が出したものじゃない。
+                    でも、その電子証明書はJ-LISが出したものじゃない。
                   </strong>
-                  {"J-LIS に聞くと「知らない」と言われるので、ログインできないよ。だから最後のたしかめが大事なんだ。"}
+                  {"J-LISに聞くと「知らない」と言われるので、ログインできないよ。だから最後に確かめるのが大事なんだ。"}
                 </>
               )
               : null}
@@ -277,7 +277,7 @@ export const AuthFlow = clientEntry(
                   ]}
                 >
                   <Icon name="question" />
-                  ちがう問題でもう一回
+                  ちがう問題でもう1回
                 </button>
               </p>
             )
@@ -408,7 +408,7 @@ function ReplayScene(
         <div mix={[partyStyle, replayPartyStyle]}>
           <PartyHead icon="monitor" name="サイト" />
           <div mix={boardStyle}>
-            <small>{secondRound ? "2 回目の問題" : "1 回目の問題"}</small>
+            <small>{secondRound ? "2回目の問題" : "1回目の問題"}</small>
             <span
               key={`q-${secondRound}`}
               mix={[questionStyle, compactQuestionStyle, popStyle]}
@@ -425,7 +425,7 @@ function ReplayScene(
             {step >= 4
               ? (
                 <>
-                  <small>公開のカギでたしかめると…</small>
+                  <small>公開のカギで確かめると…</small>
                   <span mix={[verdictStyle, ngStyle]}>
                     <Icon name="x" />合わない
                   </span>
@@ -452,7 +452,7 @@ function ReplayScene(
             {step >= 1
               ? (
                 <>
-                  <small>問題 {first} の電子署名</small>
+                  <small>問題{first}の電子署名</small>
                   <span key="memo" mix={signatureStyle}>
                     <Icon name="sign" />
                     {stolen}
@@ -479,7 +479,7 @@ function ReplayScene(
         >
           <PartyHead icon="card" name="カードのチップ" />
           <div mix={boardStyle}>
-            {secondRound ? <small>2 回目は、ここにいない</small> : (
+            {secondRound ? <small>2回目は、ここにいない</small> : (
               <>
                 <span mix={tokenStyle}>
                   <Icon name="key" />ひみつのカギ（中だけ）

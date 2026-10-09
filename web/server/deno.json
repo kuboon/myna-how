@@ -55,6 +55,6 @@
       "esnext"
     ],
     "jsx": "react-jsx",
-    "jsxImportSource": "@remix-run/component"
+    "jsxImportSource": "ruby-jsx"
   }
 }

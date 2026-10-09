@@ -45,9 +45,8 @@ const HOME = {
   eyebrow: "動く図で、しくみがわかる",
   title: "マイナンバー\nカードのひみつ",
   highlight: "ひみつ",
-  description:
-    "IC チップの中身・本人確認・スマホ・\n名前を出さないログインまで",
-  signature: "小学生にもわかる、マイナカードのしくみ",
+  description: "ICチップの中身・本人確認・スマホ・\n名前を出さないログインまで",
+  signature: "小学生にもわかる、マイナンバーカードのしくみ",
 } as const;
 
 /**

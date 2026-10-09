@@ -31,21 +31,21 @@ const asks: Ask[] = [
     },
     chip: {
       text:
-        "おことわり。どの部屋も、かぎがないと開けないよ。ひみつのカギは、だれにも見せない。",
+        "お断り。どの部屋も、カギがないと開けないよ。ひみつのカギは、だれにも見せない。",
       bad: false,
     },
   },
   {
     id: "pin",
     icon: "keypad",
-    label: "「暗証番号 1234 で、名前を見せて」",
+    label: "「暗証番号1234で、名前を見せて」",
     memo: {
       text: "暗証番号？ ぼくには確かめられないよ。読めばそのまま見えるよ。",
       bad: true,
     },
     chip: {
       text:
-        "1234 はちがうね。だから見せない。まちがえた回数は、ちゃんと数えておくよ。",
+        "1234はちがうね。だから見せない。まちがえた回数は、ちゃんと数えておくよ。",
       bad: false,
     },
   },
@@ -74,7 +74,7 @@ export const ChipOrMemo = clientEntry(
 
     return () => (
       <div>
-        <p mix={promptStyle}>2 まいのカードに、同じことをたのんでみよう。</p>
+        <p mix={promptStyle}>2まいのカードに、同じことをたのんでみよう。</p>
         <div mix={asksStyle}>
           {asks.map((a) => (
             <button
@@ -106,7 +106,7 @@ export const ChipOrMemo = clientEntry(
           />
           <Responder
             icon="chip"
-            name="IC チップ"
+            name="ICチップ"
             sub="小さなコンピューター。自分で考えて計算する"
             reply={asked?.chip ?? null}
             replyKey={`c-${round}`}
@@ -195,7 +195,7 @@ const headStyle = css({
   display: "flex",
   alignItems: "center",
   gap: "0.5rem",
-  "& span:last-child": { display: "flex", flexDirection: "column" },
+  "& > span:last-child": { display: "flex", flexDirection: "column" },
   "& small": { color: color.muted, fontSize: "0.8rem" },
 });
 
