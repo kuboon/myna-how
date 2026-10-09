@@ -35,7 +35,7 @@ export default function Tamper(_handle: Handle) {
           チップは、<strong>
             とてもかしこい金庫
           </strong>。こじあけようとすると、中の大事なものを自分で使えなくしてしまう。番号をまちがえつづけると、とびらがロックされて開かなくなる。そして、中のカギは金庫の外に出さず、
-          <strong>金庫の中でハンコをおした結果だけ</strong>を返してくれるんだ。
+          <strong>金庫の中でカギを使った答えだけ</strong>を返してくれるんだ。
         </p>
       </Analogy>
 

@@ -1,14 +1,15 @@
 /**
- * Chapter 4's moving picture: challenge and response.
+ * Chapter 4's moving picture: how a website knows the card's owner is there, told with a key and
+ * a padlock.
  *
- * A website sends a fresh random number; the chip stamps it with its secret key; the website checks
- * the stamp against the sample (the public key in the certificate) and asks J-LIS whether the
- * certificate is still good. Two switches show why it is safe: a fake card's stamp does not match,
- * and a stamp copied from last time is useless because the number has changed.
+ * The chip's secret key has a matching padlock that anyone may hold (the public key, carried in
+ * the certificate). The website puts a fresh random number in a box, locks it with that padlock and
+ * sends it over. Only the chip's key opens the box, so a correct answer proves the key is there —
+ * without the key ever leaving the chip. Two switches show why it is safe: a fake card's key does
+ * not open the padlock, and an answer copied from last time is for a different number.
  *
- * The "stamp" is a toy: a short code computed from the number and a pretend key, so the same
- * number and card always give the same stamp and a different card gives a different one. It is
- * not real cryptography and says so on the page.
+ * Real JPKI login is a signature rather than an encrypted box; the page's grown-up note says so.
+ * The idea is the same: ask for something only the secret key can do.
  */
 
 import { clientEntry, css, type Handle, on } from "@remix-run/component";
@@ -24,28 +25,9 @@ import { art, color, radius } from "../tokens.ts";
 
 type Who = "real" | "fake" | "replay";
 
-/** A pretend stamp: a few letters that depend on the number and on whose key made them. */
-function stampOf(challenge: string, key: string): string {
-  let h = 2166136261;
-  for (const ch of key + ":" + challenge) {
-    h ^= ch.charCodeAt(0);
-    h = Math.imul(h, 16777619) >>> 0;
-  }
-  const marks = "あいうえおかきくけこさしすせそたちつてとなにぬねの";
-  let out = "";
-  for (let i = 0; i < 4; i++) {
-    out += marks[h % marks.length];
-    h = Math.floor(h / marks.length) + i * 7919;
-  }
-  return out;
-}
-
-const REAL_KEY = "持ち主のカギ";
-const FAKE_KEY = "にせものカギ";
-
 /** The first number, fixed so the server and the browser render the same thing. */
 const FIRST_CHALLENGE = "4 8 1 5 2";
-/** A number from "last time", for the replay demo. */
+/** The number from "last time", for the replay demo. */
 const OLD_CHALLENGE = "9 0 3 7 6";
 
 function newChallenge(): string {
@@ -54,11 +36,11 @@ function newChallenge(): string {
 }
 
 const captions = [
-  "サイトに「マイナカードでログイン」とおすと、サイトは<毎回ちがう、なぞの数字>を送ってくるよ。",
-  "チップは、その数字に<ひみつのカギでハンコ>をおす。カギは外に出さず、チップの中でおすんだ。",
-  "ハンコと、カードの<証明書>（ハンコの見本がのっている）をサイトに送るよ。",
-  "サイトは<見本と見くらべて>、ハンコが本物か確かめる。見本ではハンコをおせないけど、本物かどうかはわかるんだ。",
-  "さいごに、<J-LIS（カードを発行しているところ）>に「この証明書、まだ使える？なくしたりしてない？」と聞く。OK なら、ログインできる！",
+  "カードを作ったとき、チップの中で<🔑 カギ>と、<そのカギでしか開かない 🔒 南京錠>がセットで作られたよ。カギはチップの中にしまったまま。南京錠のほうは、たくさん作って配ってもだいじょうぶ。サイトも持っているよ。",
+  "サイトに「マイナカードでログイン」とおすと、サイトは<毎回ちがう、なぞの数字>を決めて、📦 箱に入れるよ。",
+  "サイトは、その箱に<あなたの 🔒 南京錠>をかけて送ってくる。南京錠は、パチンとかけるのはだれでもできるけど、<開けられるのは、ペアのカギだけ>なんだ。",
+  "暗証番号が合ったら、チップは<中のカギで箱を開けて>、なぞの数字を読んで答えるよ。カギはチップの外に出さない。出ていくのは「答え」だけ。",
+  "サイトは答えを確かめる。<自分が箱に入れた数字と同じ>なら、カギを持っている本物の持ち主だ！ さいごに<J-LIS（カードを発行しているところ）>に「この南京錠、まだ使える？ なくしたりしてない？」と聞いて、OK ならログインできる。",
 ];
 
 export const AuthFlow = clientEntry(
@@ -70,24 +52,24 @@ export const AuthFlow = clientEntry(
 
     const go = (next: number) => {
       step = Math.max(0, Math.min(captions.length - 1, next));
-      if (next === 0 && step === 0) challenge = newChallenge();
       handle.update();
     };
 
     const choose = (w: Who) => {
       who = w;
-      step = 0;
+      step = 1;
       challenge = newChallenge();
       handle.update();
     };
 
     return () => {
-      const stamped = who === "replay" ? OLD_CHALLENGE : challenge;
-      const key = who === "fake" ? FAKE_KEY : REAL_KEY;
-      const stamp = stampOf(stamped, key);
-      const expected = stampOf(challenge, REAL_KEY);
-      const matches = stamp === expected;
-      const ok = matches;
+      const opened = who === "real";
+      const answer = who === "real"
+        ? challenge
+        : who === "replay"
+        ? OLD_CHALLENGE
+        : "？？？";
+      const ok = who === "real";
 
       return (
         <div>
@@ -100,7 +82,7 @@ export const AuthFlow = clientEntry(
               [
                 ["real", "🙂 本物の持ち主"],
                 ["fake", "🦹 にせものカード"],
-                ["replay", "🕵️ まえのハンコを使い回す"],
+                ["replay", "🕵️ まえの答えを使い回す"],
               ] as const
             ).map(([w, label]) => (
               <button
@@ -122,20 +104,25 @@ export const AuthFlow = clientEntry(
             <div mix={partyStyle}>
               <span mix={partyIconStyle} aria-hidden="true">💻</span>
               <strong>サイト</strong>
-              <div mix={[boardStyle, step >= 3 ? checkBoardStyle : undefined]}>
-                <small>なぞの数字</small>
-                <span mix={numberStyle}>{challenge}</span>
-                {step >= 3
+              <div mix={boardStyle}>
+                <small>もっているもの</small>
+                <span mix={tokenStyle}>🔒 あなたの南京錠</span>
+                {step >= 1
                   ? (
                     <>
-                      <small>見本で確かめると…</small>
-                      <span
-                        key={`v-${who}-${challenge}`}
-                        mix={[verdictStyle, ok ? okStyle : ngStyle]}
-                      >
-                        {ok ? "✅ 本物のハンコ" : "❌ ハンコが合わない"}
-                      </span>
+                      <small>箱に入れた、なぞの数字</small>
+                      <span mix={numberStyle}>{challenge}</span>
                     </>
+                  )
+                  : null}
+                {step >= 4
+                  ? (
+                    <span
+                      key={`v-${who}-${challenge}`}
+                      mix={[verdictStyle, ok ? okStyle : ngStyle]}
+                    >
+                      {ok ? "✅ 答えが合った！" : "❌ 答えがちがう"}
+                    </span>
                   )
                   : null}
                 {step >= 4 && ok
@@ -149,23 +136,21 @@ export const AuthFlow = clientEntry(
             </div>
 
             <div mix={wireStyle} aria-hidden="true">
-              {step === 0
+              {step === 2
                 ? (
                   <span
-                    key={`a-${challenge}`}
+                    key={`box-${challenge}`}
                     mix={[packetStyle, toRightStyle]}
                   >
-                    🔢 →
+                    📦🔒 →
                   </span>
                 )
-                : step === 2
+                : step === 3 || step === 4
                 ? (
-                  <span key="b" mix={[packetStyle, toLeftStyle]}>
-                    ← 🔏📜
+                  <span key={`ans-${who}`} mix={[packetStyle, toLeftStyle]}>
+                    ← 💬
                   </span>
                 )
-                : step === 4 && ok
-                ? <span key="c" mix={packetStyle}>🏢 ?</span>
                 : null}
             </div>
 
@@ -177,16 +162,40 @@ export const AuthFlow = clientEntry(
                 {who === "real" ? "カードのチップ" : "あやしい人"}
               </strong>
               <div mix={boardStyle}>
-                <small>ハンコをおした数字</small>
-                <span mix={numberStyle}>{step >= 1 ? stamped : "…"}</span>
-                {step >= 1
+                <small>もっているもの</small>
+                <span mix={tokenStyle}>
+                  {who === "fake"
+                    ? "🗝️ にせもののカギ"
+                    : who === "replay"
+                    ? "📝 まえの答えのメモ"
+                    : "🔑 ひみつのカギ（中だけ）"}
+                </span>
+                {step >= 3
                   ? (
-                    <span key={`s-${who}-${challenge}`} mix={stampStyle}>
-                      {stamp}
-                    </span>
+                    <>
+                      <small>とどいた箱</small>
+                      <span
+                        key={`open-${who}-${challenge}`}
+                        mix={[boxStyle, opened ? popStyle : shakeStyle]}
+                      >
+                        {opened
+                          ? "📦🔓 開いた！"
+                          : who === "fake"
+                          ? "📦🔒 開かない…"
+                          : "📦🔒 開けられない"}
+                      </span>
+                      <small>答え</small>
+                      <span mix={numberStyle}>{answer}</span>
+                    </>
+                  )
+                  : step === 2
+                  ? (
+                    <>
+                      <small>とどいた箱</small>
+                      <span mix={boxStyle}>📦🔒</span>
+                    </>
                   )
                   : null}
-                <small>使ったカギ：{key}</small>
               </div>
             </div>
           </div>
@@ -198,9 +207,9 @@ export const AuthFlow = clientEntry(
                 <>
                   <br />
                   <strong>
-                    にせもののカギでおしたハンコは、見本と合わない。
+                    にせもののカギでは、あなたの南京錠は開かない。
                   </strong>
-                  だからログインできないよ。
+                  中の数字がわからないから、正しく答えられないよ。
                 </>
               )
               : null}
@@ -209,17 +218,14 @@ export const AuthFlow = clientEntry(
                 <>
                   <br />
                   <strong>
-                    まえの数字（{OLD_CHALLENGE}）のハンコを使い回しても、今回の数字とちがうから合わない。
+                    まえにのぞき見た答え（{OLD_CHALLENGE}）を送っても、今回の箱の数字とはちがう。
                   </strong>
-                  毎回ちがう数字を使うのは、このためなんだ。
+                  毎回ちがう数字にするのは、このためなんだ。
                 </>
               )
               : null}
           </p>
           <StepBar step={step} total={captions.length} onGo={go} />
-          <p mix={toyNoteStyle}>
-            ※ここで出てくる「ハンコ」は、しくみを見せるためのおもちゃです。本物は「電子署名」という、ずっと長くて計算のむずかしい数字です。
-          </p>
           {step === captions.length - 1
             ? (
               <p mix={againStyle}>
@@ -280,7 +286,7 @@ const partyIconStyle = css({ fontSize: "2.4rem" });
 
 const boardStyle = css({
   width: "100%",
-  minHeight: "9.5rem",
+  minHeight: "11rem",
   display: "flex",
   flexDirection: "column",
   alignItems: "center",
@@ -292,25 +298,25 @@ const boardStyle = css({
   "& small": { color: color.muted, fontSize: "0.75rem" },
 });
 
-const checkBoardStyle = css({ background: art.softBlue });
+const tokenStyle = css({
+  padding: "0.1rem 0.5rem",
+  borderRadius: "999px",
+  background: art.goldLight,
+  fontWeight: 700,
+  fontSize: "0.8rem",
+});
 
 const numberStyle = css({
   fontFamily: "var(--font-mono)",
   fontWeight: 800,
-  fontSize: "1.15rem",
+  fontSize: "1.1rem",
   letterSpacing: "0.05em",
 });
 
-const stampStyle = css({
-  display: "inline-block",
-  padding: "0.15rem 0.5rem",
-  border: `3px solid ${art.ng}`,
-  borderRadius: radius.sm,
-  color: art.ng,
-  fontWeight: 900,
-  fontSize: "1.1rem",
-  animation: "stamp 450ms ease-out both",
-});
+const boxStyle = css({ fontSize: "1.1rem", fontWeight: 800 });
+
+const popStyle = css({ animation: "pop-in 400ms ease-out" });
+const shakeStyle = css({ animation: "shake 400ms ease-in-out 2" });
 
 const verdictStyle = css({
   padding: "0.1rem 0.5rem",
@@ -334,19 +340,11 @@ const wireStyle = css({
 const packetStyle = css({
   fontSize: "1.1rem",
   whiteSpace: "nowrap",
-  animation: "pop-in 300ms ease-out",
 });
 
 const toRightStyle = css({
   animation: "travel-right 1.2s ease-in-out infinite",
 });
 const toLeftStyle = css({ animation: "travel-left 1.2s ease-in-out infinite" });
-
-const toyNoteStyle = css({
-  marginTop: "0.75rem",
-  fontSize: "0.8rem !important",
-  color: color.muted,
-  lineHeight: 1.6,
-});
 
 const againStyle = css({ textAlign: "center" });
