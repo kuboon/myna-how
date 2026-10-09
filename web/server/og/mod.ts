@@ -27,17 +27,39 @@
 import { stripBase } from "@remix-kbn/ssg/base";
 
 import { base } from "../../client/base.ts";
+import {
+  type ChapterKey,
+  chapterNumber,
+  chapters,
+} from "../../client/chapters.ts";
 import { type Card, renderCard } from "./card.ts";
 
-/** The eyebrow every card carries unless a page asks for its own. */
+/** The site's name, signed at the foot of every chapter's card. */
 const SITE_NAME = "マイナンバーカードのひみつ";
 
-/** What a page tells its card — the two things every page module already exports. */
+/**
+ * What the home page's card says. Its `<title>` is written for a search result, and the card has
+ * room for less — so the card gets its own, shorter words.
+ */
+const HOME = {
+  eyebrow: "動く図で、しくみがわかる",
+  title: "マイナンバー\nカードのひみつ",
+  highlight: "ひみつ",
+  description:
+    "IC チップの中身・本人確認・スマホ・\n名前を出さないログインまで",
+  signature: "小学生にもわかる、マイナカードのしくみ",
+} as const;
+
+/**
+ * What a page tells its card — the two things every page module already exports, and which
+ * chapter it is. A chapter's card is drawn from the chapter list rather than from the page's
+ * `<title>`, which carries the site's name as well.
+ */
 export interface OgPage {
   title: string;
   description?: string;
-  /** The small line above the title. Defaults to the site's name. */
-  eyebrow?: string;
+  /** The chapter the page is; none for the home page. */
+  chapter?: ChapterKey;
 }
 
 /**
@@ -123,12 +145,19 @@ export async function serveOgImage(request: Request): Promise<Response> {
 function toCard(path: string, page: OgPage): Card {
   const pagePath = path.replace(/^\/og\//, "/").replace(/(?:index)?\.png$/, "");
   const location = `${base}${pagePath}`;
+  const footer = siteUrl ? `${siteUrl.host}${location}` : location;
+
+  const chapter = chapters.find((c) => c.key === page.chapter);
+  if (chapter === undefined) return { kind: "home", ...HOME, footer };
 
   return {
-    eyebrow: page.eyebrow ?? SITE_NAME,
-    title: page.title,
-    description: page.description,
-    footer: siteUrl ? `${siteUrl.host}${location}` : location,
+    kind: "chapter",
+    number: chapterNumber(chapter.key),
+    icon: chapter.icon,
+    title: chapter.title,
+    description: chapter.lead,
+    signature: SITE_NAME,
+    footer,
   };
 }
 

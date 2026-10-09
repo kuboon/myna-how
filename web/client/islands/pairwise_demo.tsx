@@ -11,20 +11,21 @@
 import { clientEntry, css, type Handle, on } from "@remix-run/component";
 
 import { buttonStyle, primaryStyle } from "../ui/controls.tsx";
-import { art, color, radius } from "../tokens.ts";
+import { Icon, type IconName } from "../ui/icons.tsx";
+import { art, color, font, radius } from "../tokens.ts";
 
 type Mode = "name" | "same" | "pairwise";
 
 interface Shop {
   id: string;
-  icon: string;
+  icon: IconName;
   name: string;
 }
 
 const shops: Shop[] = [
-  { id: "game", icon: "🎮", name: "ゲームのサイト" },
-  { id: "shop", icon: "🛒", name: "ネットのお店" },
-  { id: "library", icon: "📚", name: "図書館の予約" },
+  { id: "game", icon: "gamepad", name: "ゲームのサイト" },
+  { id: "shop", icon: "cart", name: "ネットのお店" },
+  { id: "library", icon: "book", name: "図書館の予約" },
 ];
 
 const modes: { id: Mode; label: string; lead: string }[] = [
@@ -114,7 +115,9 @@ export const PairwiseDemo = clientEntry(
           <p mix={leadStyle}>{modes.find((m) => m.id === mode)!.lead}</p>
 
           <div mix={personStyle}>
-            <span aria-hidden="true" mix={personIconStyle}>🧒</span>
+            <span aria-hidden="true" mix={personIconStyle}>
+              <Icon name="user" size="1.8rem" />
+            </span>
             <span>
               <strong>はなこさん</strong>が、3
               つのサイトにマイナカードでログインするよ。「ログイン」をおしてみよう（同じサイトに
@@ -129,7 +132,7 @@ export const PairwiseDemo = clientEntry(
                 <div key={shop.id} mix={shopStyle}>
                   <div mix={shopHeadStyle}>
                     <span aria-hidden="true" mix={shopIconStyle}>
-                      {shop.icon}
+                      <Icon name={shop.icon} size="1.4rem" />
                     </span>
                     <strong>{shop.name}</strong>
                   </div>
@@ -184,7 +187,8 @@ export const PairwiseDemo = clientEntry(
               ]}
               disabled={seen.length < 2}
             >
-              🕵️ サイトどうしで、とどいたものを見せ合ったら？
+              <Icon name="peeker" />
+              サイトどうしで、とどいたものを見せ合ったら？
             </button>
             {seen.length < 2
               ? <small>（2 つ以上のサイトにログインするとおせるよ）</small>
@@ -195,11 +199,21 @@ export const PairwiseDemo = clientEntry(
                   key={`cmp-${mode}`}
                   mix={[verdictStyle, linkable ? badStyle : goodStyle]}
                 >
-                  {mode === "name"
-                    ? "😟 名前も住所もわかるし、ぜんぶ同じ人だとバレバレ。"
-                    : mode === "same"
-                    ? "🤔 名前はわからない。でも番号が同じだから「同じ人だ」とわかってしまう。"
-                    : "😊 番号がばらばらなので、同じ人かどうかわからない！ それぞれのサイトは「また来た人だ」とはわかるのにね。"}
+                  <Icon
+                    name={mode === "name"
+                      ? "frown"
+                      : mode === "same"
+                      ? "meh"
+                      : "smile"}
+                    size="1.6rem"
+                  />
+                  <span>
+                    {mode === "name"
+                      ? "名前も住所もわかるし、ぜんぶ同じ人だとバレバレ。"
+                      : mode === "same"
+                      ? "名前はわからない。でも番号が同じだから「同じ人だ」とわかってしまう。"
+                      : "番号がばらばらなので、同じ人かどうかわからない！ それぞれのサイトは「また来た人だ」とはわかるのにね。"}
+                  </span>
                 </p>
               )
               : null}
@@ -217,14 +231,20 @@ const modesStyle = css({
 });
 
 const modeButtonStyle = css({
-  minHeight: "2.25rem",
-  padding: "0.3rem 0.8rem",
-  fontSize: "0.85rem",
+  minHeight: "2.5rem",
+  padding: "0.3rem 0.9rem",
+  fontSize: "0.9rem",
   borderRadius: "999px",
+  border: `2px solid ${color.line}`,
+  background: color.surface,
   '&[aria-pressed="true"]': {
     background: color.accent,
     borderColor: color.accent,
     color: color.onAccent,
+  },
+  '&[aria-pressed="true"]:hover:not(:disabled)': {
+    color: color.onAccent,
+    borderColor: color.accentStrong,
   },
 });
 
@@ -244,7 +264,16 @@ const personStyle = css({
   lineHeight: 1.7,
 });
 
-const personIconStyle = css({ fontSize: "2.2rem" });
+const personIconStyle = css({
+  display: "grid",
+  placeItems: "center",
+  width: "3rem",
+  height: "3rem",
+  flex: "none",
+  borderRadius: "999px",
+  background: art.softBlue,
+  color: color.accent,
+});
 
 const shopsStyle = css({
   display: "grid",
@@ -260,16 +289,26 @@ const shopStyle = css({
   padding: "0.75rem",
   border: `2px solid ${color.border}`,
   borderRadius: radius.lg,
-  background: color.bg,
+  background: color.surface,
 });
 
 const shopHeadStyle = css({
   display: "flex",
   alignItems: "center",
-  gap: "0.4rem",
+  gap: "0.5rem",
+  fontFamily: font.round,
 });
 
-const shopIconStyle = css({ fontSize: "1.6rem" });
+const shopIconStyle = css({
+  display: "grid",
+  placeItems: "center",
+  width: "2.4rem",
+  height: "2.4rem",
+  flex: "none",
+  borderRadius: radius.md,
+  background: art.softBlue,
+  color: color.accent,
+});
 
 const seeStyle = css({
   minHeight: "6.5rem",
@@ -283,7 +322,7 @@ const popStyle = css({ animation: "pop-in 300ms ease-out" });
 
 const receivedStyle = css({
   margin: "0.2rem 0",
-  fontFamily: "var(--font-mono)",
+  fontFamily: font.mono,
   fontWeight: 800,
   fontSize: "0.95rem !important",
   lineHeight: "1.5 !important",
@@ -303,12 +342,19 @@ const compareStyle = css({
 });
 
 const verdictStyle = css({
+  display: "flex",
+  alignItems: "center",
+  gap: "0.6rem",
   margin: 0,
   padding: "0.6rem 0.9rem",
   borderRadius: radius.md,
   fontWeight: 700,
+  textAlign: "left",
   animation: "pop-in 300ms ease-out",
 });
 
-const goodStyle = css({ background: art.softGreen });
-const badStyle = css({ background: art.softRed });
+const goodStyle = css({
+  background: art.softGreen,
+  "& > svg": { color: art.ok },
+});
+const badStyle = css({ background: art.softRed, "& > svg": { color: art.ng } });

@@ -190,7 +190,7 @@ Deno.test({
       await page.waitForFunction(
         () =>
           document.body.textContent?.includes("これをそのまま返す") &&
-          document.body.textContent?.includes("❌ 合わない"),
+          document.body.textContent?.includes("たしかめると…合わない"),
         { timeout: 5_000 },
       );
     });

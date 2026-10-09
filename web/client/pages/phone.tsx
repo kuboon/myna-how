@@ -11,7 +11,8 @@ import {
   Summary,
 } from "../parts.tsx";
 import { SITE_NAME } from "../layout.tsx";
-import { art, color, radius } from "../tokens.ts";
+import { Icon } from "../ui/icons.tsx";
+import { color, font, radius } from "../tokens.ts";
 
 export const title =
   `スマホにマイナカードが入るって、どういうこと？ — ${SITE_NAME}`;
@@ -56,18 +57,20 @@ export default function PhonePage(_handle: Handle) {
       <h2>スマホのマイナカードでできる 2 つのこと</h2>
       <div mix={usesStyle}>
         <div mix={useCardStyle}>
-          <p mix={useTitleStyle}>
-            <span aria-hidden="true">🌐</span> ネットで使う
-          </p>
+          <span mix={useIconStyle}>
+            <Icon name="globe" size={26} />
+          </span>
+          <p mix={useTitleStyle}>ネットで使う</p>
           <p>
             マイナポータルへのログインや、ネットでの申しこみ、コンビニで住民票をとるときなど。これまでの章で見てきた「ひみつのカギ」と「証明書」を使うよ。
           </p>
           <p mix={useRealStyle}>ほんとうの名前：電子証明書機能</p>
         </div>
         <div mix={useCardStyle}>
-          <p mix={useTitleStyle}>
-            <span aria-hidden="true">🧑‍💼</span> 目の前の人に見せる
-          </p>
+          <span mix={useIconStyle}>
+            <Icon name="user" size={26} />
+          </span>
+          <p mix={useTitleStyle}>目の前の人に見せる</p>
           <p>
             お店や窓口で「本人です」「20
             さい以上です」「この町に住んでいます」と確かめてもらうとき。お店の人は、デジタル庁の<strong>
@@ -159,14 +162,19 @@ const usesStyle = css({
 });
 
 const useCardStyle = css({
-  padding: "0.9rem 1rem",
+  padding: "1.125rem",
   borderRadius: radius.lg,
-  border: `2px solid ${color.border}`,
-  background: art.softBlue,
+  background: color.surface,
   "& p": { marginBlock: "0.4rem" },
 });
 
-const useTitleStyle = css({ fontWeight: 800, fontSize: "1.1rem" });
+const useIconStyle = css({ display: "inline-flex", color: color.accent });
+
+const useTitleStyle = css({
+  fontFamily: font.round,
+  fontWeight: 800,
+  fontSize: "1.1rem",
+});
 
 const useRealStyle = css({
   color: color.muted,

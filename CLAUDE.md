@@ -19,7 +19,8 @@ Remix v3 + Deno。サーバー API は持たず、GitHub Pages に静的サイ�
     の順に組む
   - `islands/` — 動く図（`clientEntry`）。このディレクトリのファイルは全部
     bundle の entrypoint になるので、共有部品は `ui/` に置く
-  - `ui/` — island どうしで共有する部品（`StepBar`、ボタンの style、SVG の絵）
+  - `ui/` — island どうしで共有する部品（`StepBar`、ボタンの style、SVG の絵、
+    `icons.tsx` の線アイコン）
   - `static/app.css` — トークンの値と `@keyframes`（`css()` mixin は keyframes
     を宣言できないので、アニメーションはここに足す）
 - `web/server/og/` — 各ページの SNS カード画像（ビルド時に生成）
@@ -30,6 +31,8 @@ Remix v3 + Deno。サーバー API は持たず、GitHub Pages に静的サイ�
   正確な名前・数字は「おとなの人向けメモ」（`GrownUpNote`）に書く
 - 事実は公式資料（デジタル庁・J-LIS・総務省）に合わせ、ページ末尾の `Sources`
   に出典を載せる
+- 絵文字は使わない。アイコンは `ui/icons.tsx` の `Icon`（OG
+  画像も同じデータで描く）
 - JSX のテキストを日本語の途中で改行しない（改行が空白になって表示される）
 - island の初期描画はサーバーとブラウザで同じにする（乱数・時刻は操作後に使う）
 

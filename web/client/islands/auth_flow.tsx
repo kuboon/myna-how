@@ -20,7 +20,8 @@ import {
   primaryStyle,
   StepBar,
 } from "../ui/controls.tsx";
-import { art, color, radius } from "../tokens.ts";
+import { Icon, type IconName } from "../ui/icons.tsx";
+import { art, color, font, radius } from "../tokens.ts";
 
 type Who = "real" | "fake" | "replay";
 
@@ -110,11 +111,11 @@ export const AuthFlow = clientEntry(
           >
             {(
               [
-                ["real", "🙂 本物のカード"],
-                ["fake", "🦹 にせものカード"],
-                ["replay", "🕵️ のぞき見して使い回す"],
+                ["real", "user", "本物のカード"],
+                ["fake", "userX", "にせものカード"],
+                ["replay", "peeker", "のぞき見して使い回す"],
               ] as const
-            ).map(([w, label]) => (
+            ).map(([w, icon, label]) => (
               <button
                 key={w}
                 type="button"
@@ -125,6 +126,7 @@ export const AuthFlow = clientEntry(
                   on("click", () => choose(w)),
                 ]}
               >
+                <Icon name={icon} />
                 {label}
               </button>
             ))}
@@ -141,8 +143,7 @@ export const AuthFlow = clientEntry(
             : (
               <div mix={sceneStyle}>
                 <div mix={partyStyle}>
-                  <span mix={partyIconStyle} aria-hidden="true">💻</span>
-                  <strong>サイト</strong>
+                  <PartyHead icon="monitor" name="サイト" />
                   <div mix={boardStyle}>
                     <small>今回の問題</small>
                     <span mix={questionStyle}>{question}</span>
@@ -154,7 +155,7 @@ export const AuthFlow = clientEntry(
                             key={`v-${who}-${question}`}
                             mix={[verdictStyle, okStyle]}
                           >
-                            ✅ 電子署名は合う
+                            <Icon name="check" />電子署名は合う
                           </span>
                         </>
                       )
@@ -165,9 +166,10 @@ export const AuthFlow = clientEntry(
                           key={`jlis-${who}`}
                           mix={[verdictStyle, registered ? okStyle : ngStyle]}
                         >
+                          <Icon name={registered ? "check" : "x"} />
                           {registered
-                            ? "🏢 J-LIS「まだ使えるよ」→ ログインOK"
-                            : "🏢 J-LIS「そんな電子証明書は出していない」→ ❌ ログインできない"}
+                            ? "J-LIS「まだ使えるよ」→ ログインOK"
+                            : "J-LIS「そんな電子証明書は出していない」→ ログインできない"}
                         </span>
                       )
                       : null}
@@ -177,40 +179,40 @@ export const AuthFlow = clientEntry(
                 <div mix={wireStyle} aria-hidden="true">
                   {step === 0
                     ? (
-                      <span
+                      <Packet
                         key={`q-${question}`}
-                        mix={[packetStyle, toRightStyle]}
-                      >
-                        ❓ →
-                      </span>
+                        dir="toCard"
+                        icons={["question"]}
+                      />
                     )
                     : step === 2
                     ? (
-                      <span key="s" mix={[packetStyle, toLeftStyle]}>
-                        ← ✍️📜
-                      </span>
+                      <Packet
+                        key="s"
+                        dir="toSite"
+                        icons={["sign", "certificate"]}
+                      />
                     )
                     : null}
                 </div>
 
                 <div mix={partyStyle}>
-                  <span mix={partyIconStyle} aria-hidden="true">
-                    {who === "fake" ? "🦹" : "🪪"}
-                  </span>
-                  <strong>
-                    {who === "real" ? "カードのチップ" : "にせものカード"}
-                  </strong>
+                  {who === "fake"
+                    ? <PartyHead icon="userX" name="にせものカード" bad />
+                    : <PartyHead icon="card" name="カードのチップ" />}
                   <div mix={boardStyle}>
                     <small>もっているもの</small>
                     <span mix={tokenStyle}>
+                      <Icon name="key" />
                       {who === "fake"
-                        ? "🔑 自分で作ったひみつのカギ"
-                        : "🔑 ひみつのカギ（中だけ）"}
+                        ? "自分で作ったひみつのカギ"
+                        : "ひみつのカギ（中だけ）"}
                     </span>
                     <span mix={tokenStyle}>
+                      <Icon name="certificate" />
                       {who === "fake"
-                        ? "📜 自分で作ったにせの電子証明書"
-                        : "📜 J-LIS が出した電子証明書"}
+                        ? "自分で作ったにせの電子証明書"
+                        : "J-LIS が出した電子証明書"}
                     </span>
                     {step >= 1
                       ? (
@@ -220,7 +222,8 @@ export const AuthFlow = clientEntry(
                             key={`sig-${who}-${question}`}
                             mix={signatureStyle}
                           >
-                            ✍️ {signature}
+                            <Icon name="sign" />
+                            {signature}
                           </span>
                         </>
                       )
@@ -256,8 +259,7 @@ export const AuthFlow = clientEntry(
                   <strong>
                     でも、その電子証明書は J-LIS が出したものじゃない。
                   </strong>
-                  J-LIS
-                  に聞くと「知らない」と言われるので、ログインできないよ。だから最後のたしかめが大事なんだ。
+                  {"J-LIS に聞くと「知らない」と言われるので、ログインできないよ。だから最後のたしかめが大事なんだ。"}
                 </>
               )
               : null}
@@ -274,7 +276,8 @@ export const AuthFlow = clientEntry(
                     on("click", () => choose(who)),
                   ]}
                 >
-                  ❓ ちがう問題でもう一回
+                  <Icon name="question" />
+                  ちがう問題でもう一回
                 </button>
               </p>
             )
@@ -284,6 +287,99 @@ export const AuthFlow = clientEntry(
     };
   },
 );
+
+/** A party's icon tile and name: stacked on wide screens, side by side on a phone. */
+function PartyHead(
+  handle: Handle<{ icon: IconName; name: string; bad?: boolean }>,
+) {
+  return () => {
+    const { icon, name, bad } = handle.props;
+    return (
+      <div mix={partyHeadStyle}>
+        <span
+          mix={[partyIconStyle, bad ? badIconStyle : undefined]}
+          aria-hidden="true"
+        >
+          {icon === "card" ? <MiniCard /> : <Icon name={icon} size="1.9rem" />}
+        </span>
+        <strong mix={bad ? badNameStyle : undefined}>{name}</strong>
+      </div>
+    );
+  };
+}
+
+/** The card, small: card blue with the gold chip. */
+function MiniCard() {
+  return () => (
+    <svg viewBox="0 0 40 28" width="2.4rem" height="1.7rem" aria-hidden="true">
+      <rect
+        x="1"
+        y="1"
+        width="38"
+        height="26"
+        rx="4"
+        style={{ fill: color.accent }}
+      />
+      <rect
+        x="6"
+        y="9"
+        width="10"
+        height="8"
+        rx="1.5"
+        style={{ fill: art.gold, stroke: art.goldLight }}
+        stroke-width="1"
+      />
+      <path
+        d="M21 11h12M21 16h8"
+        style={{ stroke: color.onAccent }}
+        stroke-width="2"
+        stroke-linecap="round"
+        opacity="0.7"
+      />
+    </svg>
+  );
+}
+
+/**
+ * Something on its way between the website (above / left) and the card (below / right). The arrow
+ * points sideways on a wide screen and up or down once the parties stack on a phone.
+ */
+function Packet(
+  handle: Handle<{ dir: "toCard" | "toSite"; icons: readonly IconName[] }>,
+) {
+  return () => {
+    const { dir, icons } = handle.props;
+    const toCard = dir === "toCard";
+    const stuff = icons.map((name) => <Icon key={name} name={name} />);
+    return (
+      <span mix={[packetStyle, toCard ? toRightStyle : toLeftStyle]}>
+        {toCard ? null : (
+          <>
+            <span mix={wideOnlyStyle}>
+              <Icon name="arrowLeft" />
+            </span>
+            <span mix={narrowOnlyStyle}>
+              <Icon name="arrowUp" />
+            </span>
+          </>
+        )}
+        {stuff}
+        {toCard
+          ? (
+            <>
+              <span mix={wideOnlyStyle}>
+                <Icon name="arrowRight" />
+              </span>
+              <span mix={narrowOnlyStyle}>
+                <Icon name="arrowDown" />
+              </span>
+            </>
+          )
+          : null}
+      </span>
+    );
+  };
+}
 
 /**
  * The replay story: the eavesdropper stands between the website and the card, copies the first
@@ -296,11 +392,21 @@ function ReplayScene(
     const { step, first, second } = handle.props;
     const stolen = signatureOf(first, REAL_KEY);
     const secondRound = step >= 2;
+    // What travels on each wire this step, if anything.
+    const siteWire = step === 0 || step === 2
+      ? <Packet key={`a-${step}`} dir="toCard" icons={["question"]} />
+      : step === 1 || step === 3
+      ? <Packet key={`b-${step}`} dir="toSite" icons={["sign"]} />
+      : null;
+    const cardWire = step === 0
+      ? <Packet key="c" dir="toCard" icons={["question"]} />
+      : step === 1
+      ? <Packet key="d" dir="toSite" icons={["sign"]} />
+      : null;
     return (
       <div mix={replaySceneStyle}>
-        <div mix={partyStyle}>
-          <span mix={partyIconStyle} aria-hidden="true">💻</span>
-          <strong>サイト</strong>
+        <div mix={[partyStyle, replayPartyStyle]}>
+          <PartyHead icon="monitor" name="サイト" />
           <div mix={boardStyle}>
             <small>{secondRound ? "2 回目の問題" : "1 回目の問題"}</small>
             <span
@@ -310,40 +416,47 @@ function ReplayScene(
               {secondRound ? second : first}
             </span>
             {step === 1
-              ? <span mix={[verdictStyle, okStyle]}>✅ 本物。ログインOK</span>
+              ? (
+                <span mix={[verdictStyle, okStyle]}>
+                  <Icon name="check" />本物。ログインOK
+                </span>
+              )
               : null}
             {step >= 4
               ? (
                 <>
                   <small>公開のカギでたしかめると…</small>
-                  <span mix={[verdictStyle, ngStyle]}>❌ 合わない</span>
+                  <span mix={[verdictStyle, ngStyle]}>
+                    <Icon name="x" />合わない
+                  </span>
                 </>
               )
               : null}
           </div>
         </div>
 
-        <div mix={[partyStyle, eveStyle]}>
-          <span mix={partyIconStyle} aria-hidden="true">🕵️</span>
-          <strong>のぞき見した人</strong>
+        <div mix={[connectorStyle, narrowOnlyStyle]} aria-hidden="true">
+          {siteWire}
+        </div>
+
+        <div mix={[partyStyle, replayPartyStyle, eveStyle]}>
+          <PartyHead icon="peeker" name="のぞき見した人" bad />
           <div mix={wireRowStyle} aria-hidden="true">
-            {step === 0
-              ? <span key="a" mix={[packetStyle, toRightStyle]}>❓→</span>
-              : step === 1
-              ? <span key="b" mix={[packetStyle, toLeftStyle]}>←✍️</span>
-              : step === 2
-              ? <span key="c" mix={[packetStyle, toRightStyle]}>❓→</span>
-              : step === 3
-              ? <span key="d" mix={[packetStyle, toLeftStyle]}>←✍️</span>
-              : null}
+            {siteWire}
           </div>
           <div mix={[boardStyle, eveBoardStyle]}>
-            <small>{step === 0 ? "👀 見ている…" : "📝 こっそりメモ"}</small>
+            <small>
+              <Icon name={step === 0 ? "eye" : "notebook"} />
+              {step === 0 ? " 見ている…" : " こっそりメモ"}
+            </small>
             {step >= 1
               ? (
                 <>
                   <small>問題 {first} の電子署名</small>
-                  <span key="memo" mix={signatureStyle}>✍️ {stolen}</span>
+                  <span key="memo" mix={signatureStyle}>
+                    <Icon name="sign" />
+                    {stolen}
+                  </span>
                 </>
               )
               : null}
@@ -353,18 +466,32 @@ function ReplayScene(
           </div>
         </div>
 
-        <div mix={[partyStyle, secondRound ? awayStyle : undefined]}>
-          <span mix={partyIconStyle} aria-hidden="true">🪪</span>
-          <strong>カードのチップ</strong>
+        <div mix={[connectorStyle, narrowOnlyStyle]} aria-hidden="true">
+          {cardWire}
+        </div>
+
+        <div
+          mix={[
+            partyStyle,
+            replayPartyStyle,
+            secondRound ? awayStyle : undefined,
+          ]}
+        >
+          <PartyHead icon="card" name="カードのチップ" />
           <div mix={boardStyle}>
             {secondRound ? <small>2 回目は、ここにいない</small> : (
               <>
-                <span mix={tokenStyle}>🔑 ひみつのカギ（中だけ）</span>
+                <span mix={tokenStyle}>
+                  <Icon name="key" />ひみつのカギ（中だけ）
+                </span>
                 {step >= 1
                   ? (
                     <>
                       <small>つけた電子署名</small>
-                      <span mix={signatureStyle}>✍️ {stolen}</span>
+                      <span mix={signatureStyle}>
+                        <Icon name="sign" />
+                        {stolen}
+                      </span>
                     </>
                   )
                   : null}
@@ -377,6 +504,12 @@ function ReplayScene(
   };
 }
 
+/** Where the parties stop sitting side by side and stack instead. */
+const narrow = "@media (max-width: 560px)";
+
+const wideOnlyStyle = css({ [narrow]: { display: "none" } });
+const narrowOnlyStyle = css({ display: "none", [narrow]: { display: "flex" } });
+
 const chooserStyle = css({
   display: "flex",
   flexWrap: "wrap",
@@ -385,14 +518,20 @@ const chooserStyle = css({
 });
 
 const chooserButtonStyle = css({
-  minHeight: "2.25rem",
-  padding: "0.3rem 0.8rem",
-  fontSize: "0.85rem",
+  minHeight: "2.5rem",
+  padding: "0.3rem 0.9rem",
+  fontSize: "0.9rem",
   borderRadius: "999px",
+  border: `2px solid ${color.line}`,
+  background: color.surface,
   '&[aria-pressed="true"]': {
     background: color.accent,
     borderColor: color.accent,
     color: color.onAccent,
+  },
+  '&[aria-pressed="true"]:hover:not(:disabled)': {
+    color: color.onAccent,
+    borderColor: color.accentStrong,
   },
 });
 
@@ -401,17 +540,41 @@ const sceneStyle = css({
   gridTemplateColumns: "minmax(0, 1fr) 3.5rem minmax(0, 1fr)",
   alignItems: "start",
   gap: "0.25rem",
+  [narrow]: { gridTemplateColumns: "minmax(0, 1fr)", gap: 0 },
 });
 
 const partyStyle = css({
   display: "flex",
   flexDirection: "column",
   alignItems: "center",
-  gap: "0.2rem",
+  gap: "0.4rem",
   textAlign: "center",
+  [narrow]: { alignItems: "stretch", textAlign: "left" },
 });
 
-const partyIconStyle = css({ fontSize: "2.4rem" });
+const partyHeadStyle = css({
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  gap: "0.3rem",
+  fontFamily: font.round,
+  [narrow]: { flexDirection: "row", gap: "0.6rem" },
+});
+
+const partyIconStyle = css({
+  display: "grid",
+  placeItems: "center",
+  width: "3.25rem",
+  height: "3.25rem",
+  flex: "none",
+  borderRadius: radius.md,
+  background: art.softBlue,
+  color: color.accent,
+  [narrow]: { width: "2.75rem", height: "2.75rem" },
+});
+
+const badIconStyle = css({ background: art.softRed, color: art.ng });
+const badNameStyle = css({ color: art.ng });
 
 const boardStyle = css({
   width: "100%",
@@ -419,42 +582,58 @@ const boardStyle = css({
   display: "flex",
   flexDirection: "column",
   alignItems: "center",
-  gap: "0.25rem",
+  gap: "0.3rem",
   padding: "0.6rem",
   borderRadius: radius.md,
   background: color.card,
   border: `1px solid ${color.border}`,
   "& small": { color: color.muted, fontSize: "0.75rem" },
+  [narrow]: { minHeight: 0, alignItems: "flex-start" },
 });
 
 const questionStyle = css({
-  fontFamily: "var(--font-mono)",
+  fontFamily: font.mono,
   fontWeight: 800,
   fontSize: "1.1rem",
   letterSpacing: "0.05em",
+  whiteSpace: "nowrap",
 });
 
 const tokenStyle = css({
-  padding: "0.1rem 0.5rem",
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "0.3rem",
+  padding: "0.15rem 0.6rem",
   borderRadius: "999px",
   background: art.goldLight,
+  color: art.ink,
   fontWeight: 700,
   fontSize: "0.8rem",
 });
 
 const signatureStyle = css({
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "0.3rem",
   padding: "0.15rem 0.5rem",
   borderRadius: radius.sm,
   border: `2px solid ${color.accent}`,
-  fontFamily: "var(--font-mono)",
+  background: color.surface,
+  color: color.accent,
+  fontFamily: font.mono,
   fontWeight: 800,
   fontSize: "0.95rem",
+  whiteSpace: "nowrap",
   animation: "pop-in 400ms ease-out",
 });
 
 const verdictStyle = css({
-  padding: "0.1rem 0.5rem",
-  borderRadius: radius.sm,
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "0.3rem",
+  padding: "0.2rem 0.7rem",
+  borderRadius: "999px",
+  fontFamily: font.round,
   fontWeight: 800,
   fontSize: "0.85rem",
   animation: "pop-in 350ms ease-out",
@@ -468,31 +647,97 @@ const wireStyle = css({
   display: "flex",
   justifyContent: "center",
   height: "2rem",
-  borderBottom: `3px dotted ${color.border}`,
+  borderBottom: `3px dotted ${color.line}`,
+  [narrow]: {
+    alignSelf: "center",
+    width: 0,
+    height: "2.75rem",
+    borderBottom: 0,
+    borderLeft: `3px dotted ${color.line}`,
+    alignItems: "center",
+  },
 });
 
-const packetStyle = css({ fontSize: "1.1rem", whiteSpace: "nowrap" });
+const packetStyle = css({
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "0.15rem",
+  color: color.accent,
+  fontSize: "1.1rem",
+  whiteSpace: "nowrap",
+  [narrow]: {
+    padding: "0.15rem 0.4rem",
+    borderRadius: "999px",
+    background: color.surface,
+    border: `2px solid ${color.line}`,
+  },
+});
 
 const toRightStyle = css({
   animation: "travel-right 1.2s ease-in-out infinite",
+  [narrow]: { animation: "float 1.2s ease-in-out infinite" },
 });
-const toLeftStyle = css({ animation: "travel-left 1.2s ease-in-out infinite" });
+const toLeftStyle = css({
+  animation: "travel-left 1.2s ease-in-out infinite",
+  [narrow]: { animation: "float 1.2s ease-in-out infinite" },
+});
 
 const replaySceneStyle = css({
   display: "grid",
-  "& > div > div": { paddingInline: "0.35rem" },
   gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
   alignItems: "start",
   gap: "0.3rem",
+  "& > div > div": { paddingInline: "0.35rem" },
+  [narrow]: {
+    gridTemplateColumns: "minmax(0, 1fr)",
+    gap: 0,
+    "& > div > div": { paddingInline: 0 },
+  },
+});
+
+/** On a phone, each party is one row: icon on the left, name and what it has on the right. */
+const replayPartyStyle = css({
+  [narrow]: {
+    display: "grid",
+    gridTemplateColumns: "auto minmax(0, 1fr)",
+    columnGap: "0.6rem",
+    alignItems: "start",
+    padding: "0.6rem",
+    borderRadius: radius.md,
+    background: color.card,
+    border: `1px solid ${color.border}`,
+    "& > div:first-child": { display: "contents" },
+    "& > div:first-child > span": { gridRow: "span 2" },
+    "& > div:last-child": {
+      gridColumn: "2",
+      padding: 0,
+      background: "transparent",
+      border: 0,
+    },
+  },
 });
 
 const eveStyle = css({
-  "& > strong": { color: art.ng },
+  [narrow]: {
+    background: art.softRed,
+    border: `2px dashed ${art.ng}`,
+  },
 });
 
 const eveBoardStyle = css({
   background: art.softRed,
   borderStyle: "dashed",
+  borderColor: art.ng,
+});
+
+const connectorStyle = css({
+  justifyContent: "center",
+  alignItems: "center",
+  height: "2.75rem",
+  marginInline: "auto",
+  borderLeft: `3px dotted ${color.line}`,
+  width: 0,
+  overflow: "visible",
 });
 
 const wireRowStyle = css({
@@ -500,13 +745,13 @@ const wireRowStyle = css({
   justifyContent: "center",
   width: "100%",
   height: "1.6rem",
-  borderBottom: `3px dotted ${color.border}`,
+  borderBottom: `3px dotted ${color.line}`,
+  [narrow]: { display: "none" },
 });
 
 const compactQuestionStyle = css({
   fontSize: "0.95rem",
   letterSpacing: 0,
-  whiteSpace: "nowrap",
 });
 
 const awayStyle = css({ opacity: 0.4 });

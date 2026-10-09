@@ -8,9 +8,10 @@
 
 import { css, type Handle, on } from "@remix-run/component";
 
-import { art, color, radius } from "../tokens.ts";
+import { art, color, font, radius } from "../tokens.ts";
+import { Icon } from "./icons.tsx";
 
-/** "もどる / 1 / 5 / すすむ", plus a dot per step. */
+/** "もどる / すすむ", with a dot per step between them. */
 export function StepBar(
   handle: Handle<{
     step: number;
@@ -27,7 +28,7 @@ export function StepBar(
           mix={[buttonStyle, on("click", () => onGo(step - 1))]}
           disabled={step === 0}
         >
-          ← もどる
+          <Icon name="arrowLeft" /> もどる
         </button>
         <div mix={dotsStyle} aria-label={`${total} こ中 ${step + 1} こめ`}>
           {Array.from({ length: total }, (_, i) => (
@@ -50,7 +51,7 @@ export function StepBar(
                 on("click", () => onGo(step + 1)),
               ]}
             >
-              すすむ →
+              すすむ <Icon name="arrowRight" />
             </button>
           )
           : (
@@ -58,7 +59,7 @@ export function StepBar(
               type="button"
               mix={[buttonStyle, on("click", () => onGo(0))]}
             >
-              ↺ さいしょから
+              <Icon name="restart" /> さいしょから
             </button>
           )}
       </div>
@@ -76,14 +77,19 @@ export function emphasize(text: string) {
 /** A rounded, chunky button that is easy to hit with a thumb. */
 export const buttonStyle = css({
   cursor: "pointer",
-  padding: "0.55rem 1rem",
-  minHeight: "2.75rem",
-  border: `2px solid ${color.border}`,
-  borderRadius: radius.lg,
-  background: color.bg,
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "0.4rem",
+  padding: "0.4rem 1.2rem",
+  minHeight: "3rem",
+  border: `2px solid ${color.line}`,
+  borderRadius: "999px",
+  background: color.surface,
   color: color.fg,
-  fontWeight: 700,
-  fontSize: "0.95rem",
+  fontFamily: font.round,
+  fontWeight: 800,
+  fontSize: "1rem",
   "&:hover:not(:disabled)": { borderColor: color.accent, color: color.accent },
   "&:active:not(:disabled)": { transform: "translateY(1px)" },
   "&:disabled": { opacity: 0.4, cursor: "not-allowed" },
@@ -96,7 +102,8 @@ export const primaryStyle = css({
   color: color.onAccent,
   "&:hover:not(:disabled)": {
     color: color.onAccent,
-    filter: "brightness(1.08)",
+    borderColor: color.accentStrong,
+    background: color.accentStrong,
   },
 });
 
@@ -122,7 +129,11 @@ export const captionStyle = css({
 
 const barStyle = css({
   display: "flex",
-  "& > button": { whiteSpace: "nowrap", paddingInline: "0.8rem" },
+  "& > button": { whiteSpace: "nowrap", paddingInline: "1rem" },
+  "@media (max-width: 420px)": {
+    gap: "0.35rem",
+    "& > button": { paddingInline: "0.75rem", fontSize: "0.9rem" },
+  },
   alignItems: "center",
   justifyContent: "space-between",
   gap: "0.5rem",
@@ -130,21 +141,24 @@ const barStyle = css({
 
 const dotsStyle = css({
   display: "flex",
-  flexWrap: "wrap",
+  flexWrap: "nowrap",
   justifyContent: "center",
-  gap: "0.35rem",
+  gap: "0.4rem",
 });
 
 const dotStyle = css({
-  width: "0.8rem",
-  height: "0.8rem",
+  width: "0.6rem",
+  height: "0.6rem",
   padding: 0,
   border: 0,
   borderRadius: "999px",
-  background: color.border,
+  background: color.line,
   cursor: "pointer",
+  transition: "width 200ms",
+  // A bigger hit area than the dot itself.
+  outlineOffset: "4px",
   '&[aria-current="step"]': {
+    width: "1.75rem",
     background: color.accent,
-    transform: "scale(1.25)",
   },
 });

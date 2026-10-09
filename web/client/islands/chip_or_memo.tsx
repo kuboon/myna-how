@@ -9,11 +9,12 @@
 import { clientEntry, css, type Handle, on } from "@remix-run/component";
 
 import { buttonStyle } from "../ui/controls.tsx";
+import { Icon, type IconName } from "../ui/icons.tsx";
 import { art, color, radius } from "../tokens.ts";
 
 interface Ask {
   id: string;
-  icon: string;
+  icon: IconName;
   label: string;
   memo: { text: string; bad: boolean };
   chip: { text: string; bad: boolean };
@@ -22,10 +23,10 @@ interface Ask {
 const asks: Ask[] = [
   {
     id: "dump",
-    icon: "📖",
+    icon: "book",
     label: "「中身をぜんぶ読ませて」",
     memo: {
-      text: "はい、どうぞ！ 名前も住所も、🔑 ひみつのカギも、ぜんぶ見せるよ。",
+      text: "はい、どうぞ！ 名前も住所も、ひみつのカギも、ぜんぶ見せるよ。",
       bad: true,
     },
     chip: {
@@ -36,7 +37,7 @@ const asks: Ask[] = [
   },
   {
     id: "pin",
-    icon: "🔢",
+    icon: "keypad",
     label: "「暗証番号 1234 で、名前を見せて」",
     memo: {
       text: "暗証番号？ ぼくには確かめられないよ。読めばそのまま見えるよ。",
@@ -50,11 +51,11 @@ const asks: Ask[] = [
   },
   {
     id: "sign",
-    icon: "✍️",
+    icon: "sign",
     label: "「この問題に、電子署名をつけて」",
     memo: {
       text:
-        "ぼくは計算ができないんだ…。🔑 ひみつのカギをわたすから、自分でつけてね。",
+        "ぼくは計算ができないんだ…。ひみつのカギをわたすから、自分でつけてね。",
       bad: true,
     },
     chip: {
@@ -90,21 +91,21 @@ export const ChipOrMemo = clientEntry(
                 }),
               ]}
             >
-              <span aria-hidden="true">{a.icon}</span> {a.label}
+              <Icon name={a.icon} /> {a.label}
             </button>
           ))}
         </div>
 
         <div mix={pairStyle}>
           <Responder
-            icon="📒"
+            icon="notebook"
             name="ただのメモ帳カード"
             sub="しまうだけ。計算はできない"
             reply={asked?.memo ?? null}
             replyKey={`m-${round}`}
           />
           <Responder
-            icon="🧠"
+            icon="chip"
             name="IC チップ"
             sub="小さなコンピューター。自分で考えて計算する"
             reply={asked?.chip ?? null}
@@ -118,7 +119,7 @@ export const ChipOrMemo = clientEntry(
 
 function Responder(
   handle: Handle<{
-    icon: string;
+    icon: IconName;
     name: string;
     sub: string;
     reply: { text: string; bad: boolean } | null;
@@ -130,7 +131,9 @@ function Responder(
     return (
       <div mix={responderStyle}>
         <div mix={headStyle}>
-          <span aria-hidden="true" mix={iconStyle}>{icon}</span>
+          <span mix={iconStyle}>
+            <Icon name={icon} size={28} />
+          </span>
           <span>
             <strong>{name}</strong>
             <small>{sub}</small>
@@ -143,8 +146,10 @@ function Responder(
                 key={replyKey}
                 mix={[bubbleStyle, reply.bad ? badStyle : goodStyle]}
               >
-                {reply.bad ? "😱 " : "🛡️ "}
-                {reply.text}
+                <span mix={replyIconStyle}>
+                  <Icon name={reply.bad ? "alert" : "shieldCheck"} size={22} />
+                </span>
+                <span>{reply.text}</span>
               </p>
             )
             : <p mix={waitStyle}>（たのみごとを待っているよ）</p>}
@@ -162,7 +167,10 @@ const asksStyle = css({
 });
 
 const askStyle = css({
+  justifyContent: "flex-start",
   textAlign: "left",
+  "& svg": { color: color.accent },
+  '&[aria-pressed="true"] svg': { color: color.onAccent },
   '&[aria-pressed="true"]': {
     background: color.accent,
     borderColor: color.accent,
@@ -178,8 +186,7 @@ const pairStyle = css({
 });
 
 const responderStyle = css({
-  padding: "0.75rem",
-  border: `2px solid ${color.border}`,
+  padding: "0.9rem",
   borderRadius: radius.lg,
   background: color.card,
 });
@@ -192,11 +199,25 @@ const headStyle = css({
   "& small": { color: color.muted, fontSize: "0.8rem" },
 });
 
-const iconStyle = css({ fontSize: "2rem" });
+const iconStyle = css({
+  flex: "none",
+  display: "grid",
+  placeItems: "center",
+  width: "3rem",
+  height: "3rem",
+  borderRadius: radius.md,
+  background: art.softBlue,
+  color: color.accent,
+});
+
+const replyIconStyle = css({ flex: "none", display: "inline-flex" });
 
 const bubbleWrapStyle = css({ minHeight: "6.5rem", marginTop: "0.5rem" });
 
 const bubbleStyle = css({
+  display: "flex",
+  alignItems: "flex-start",
+  gap: "0.5rem",
   margin: 0,
   padding: "0.6rem 0.8rem",
   borderRadius: radius.md,
@@ -205,8 +226,14 @@ const bubbleStyle = css({
   animation: "pop-in 300ms ease-out",
 });
 
-const badStyle = css({ background: art.softRed });
-const goodStyle = css({ background: art.softGreen });
+const badStyle = css({
+  background: art.softRed,
+  "& > span:first-child": { color: art.ng },
+});
+const goodStyle = css({
+  background: art.softGreen,
+  "& > span:first-child": { color: art.ok },
+});
 
 const waitStyle = css({
   margin: 0,

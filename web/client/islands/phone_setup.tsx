@@ -10,16 +10,17 @@ import { clientEntry, css, type Handle } from "@remix-run/component";
 
 import { CardFront, Phone } from "../ui/art.tsx";
 import { captionStyle, emphasize, StepBar } from "../ui/controls.tsx";
-import { art, color, radius } from "../tokens.ts";
+import { Icon, type IconName } from "../ui/icons.tsx";
+import { art, color, font, radius } from "../tokens.ts";
 
 interface Step {
   caption: string;
   /** What sits between the card and the phone. */
-  middle: string;
+  middle: IconName;
   middleLabel: string;
   /** The animation the middle plays. */
   motion: "none" | "right" | "left" | "pop" | "waves";
-  phoneScreen?: string;
+  phoneScreen?: IconName;
   phoneVault: boolean;
   /** Shows the key inside the phone's vault. */
   phoneKey: boolean;
@@ -30,7 +31,7 @@ const steps: Step[] = [
   {
     caption:
       "「スマホにマイナカードを入れる」ときくと、カードを<コピー>するように思うよね。でも、じつはコピーはしないんだ。ひみつのカギは、カードの外に出られないから。",
-    middle: "❌📄",
+    middle: "x",
     middleLabel: "コピーはしない",
     motion: "pop",
     phoneVault: false,
@@ -39,7 +40,7 @@ const steps: Step[] = [
   {
     caption:
       "スマホの中にも、チップと同じような<とくべつな金庫>（セキュアエレメント）があるよ。ふつうのアプリでは中をのぞけない、かたい金庫なんだ。",
-    middle: "🔍",
+    middle: "search",
     middleLabel: "スマホの金庫",
     motion: "pop",
     phoneVault: true,
@@ -48,7 +49,7 @@ const steps: Step[] = [
   {
     caption:
       "その金庫の中で、<スマホ用の新しいひみつのカギ>を作るよ。このカギも、金庫の外には出ない。",
-    middle: "✨",
+    middle: "sparkle",
     middleLabel: "新しいカギを作る",
     motion: "pop",
     phoneVault: true,
@@ -57,30 +58,30 @@ const steps: Step[] = [
   {
     caption:
       "つぎに、<本物のカードをスマホにかざして>、暗証番号を入れる。これで「このスマホを使っているのは、カードの持ち主本人です」と証明するんだ。",
-    middle: "📶",
+    middle: "wave",
     middleLabel: "カードをかざす",
     motion: "waves",
-    phoneScreen: "🔢",
+    phoneScreen: "keypad",
     phoneVault: true,
     phoneKey: true,
   },
   {
     caption:
       "本人だとわかったので、カードを発行しているところ（J-LIS）から、<スマホ用の証明書>がとどく。スマホのカギとセットで使えるようになるよ。",
-    middle: "📜",
+    middle: "certificate",
     middleLabel: "スマホ用の証明書",
     motion: "left",
-    phoneScreen: "📜",
+    phoneScreen: "certificate",
     phoneVault: true,
     phoneKey: true,
   },
   {
     caption:
       "完成！ これからは、スマホだけで本人確認ができる。iPhone なら、暗証番号のかわりに<顔や指紋>で使えるよ。",
-    middle: "🎉",
+    middle: "sparkle",
     middleLabel: "完成",
     motion: "pop",
-    phoneScreen: "😀",
+    phoneScreen: "smile",
     phoneVault: true,
     phoneKey: true,
     cardDim: true,
@@ -88,10 +89,10 @@ const steps: Step[] = [
   {
     caption:
       "スマホをなくしたら？ <スマホのカギだけを止める>ことができるよ。カードのカギとは別ものだから、カードはそのまま使える。",
-    middle: "⛔",
+    middle: "ban",
     middleLabel: "スマホのカギだけ止める",
     motion: "pop",
-    phoneScreen: "⛔",
+    phoneScreen: "ban",
     phoneVault: true,
     phoneKey: false,
   },
@@ -114,15 +115,23 @@ export const PhoneSetup = clientEntry(
             <figure mix={[sideStyle, s.cardDim ? dimStyle : undefined]}>
               <CardFront label="マイナンバーカード" />
               <figcaption>カード</figcaption>
-              <span mix={tagStyle}>🔑 カードのカギ</span>
+              <span mix={tagStyle}>
+                <Icon name="key" /> カードのカギ
+              </span>
             </figure>
 
             <div mix={middleStyle} aria-label={s.middleLabel}>
               <span
                 key={`m-${step}`}
-                mix={[middleIconStyle, motionStyle(s.motion)]}
+                mix={[
+                  middleIconStyle,
+                  s.middle === "x" || s.middle === "ban"
+                    ? middleNgStyle
+                    : undefined,
+                  motionStyle(s.motion),
+                ]}
               >
-                {s.middle}
+                <Icon name={s.middle} size="2.2rem" />
               </span>
               <span mix={middleLabelStyle}>{s.middleLabel}</span>
             </div>
@@ -137,13 +146,19 @@ export const PhoneSetup = clientEntry(
                 {s.phoneKey
                   ? (
                     <span key={`k-${step}`} mix={phoneKeyStyle}>
-                      🗝️
+                      <Icon name="key" size="1.3rem" />
                     </span>
                   )
                   : null}
               </div>
               <figcaption>スマホ</figcaption>
-              {s.phoneKey ? <span mix={tagStyle}>🗝️ スマホのカギ</span> : null}
+              {s.phoneKey
+                ? (
+                  <span mix={tagStyle}>
+                    <Icon name="key" /> スマホのカギ
+                  </span>
+                )
+                : null}
             </figure>
           </div>
 
@@ -196,16 +211,27 @@ const phoneKeyStyle = css({
   left: "50%",
   top: "62%",
   translate: "-50% -50%",
-  fontSize: "1.6rem",
+  display: "grid",
+  placeItems: "center",
+  padding: "0.3rem",
+  borderRadius: "999px",
+  border: `2px solid ${art.gold}`,
+  background: color.surface,
+  color: art.gold,
   animation: "pop-in 500ms ease-out",
 });
 
 const dimStyle = css({ opacity: 0.45 });
 
 const tagStyle = css({
-  padding: "0.1rem 0.5rem",
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "0.25rem",
+  padding: "0.15rem 0.6rem",
   borderRadius: "999px",
-  background: art.goldLight,
+  background: art.goldSoft,
+  border: `1px solid ${art.gold}`,
+  fontFamily: font.round,
   fontSize: "0.75rem",
   fontWeight: 700,
   whiteSpace: "nowrap",
@@ -219,7 +245,17 @@ const middleStyle = css({
   textAlign: "center",
 });
 
-const middleIconStyle = css({ fontSize: "2.4rem", display: "inline-block" });
+const middleIconStyle = css({
+  display: "grid",
+  placeItems: "center",
+  width: "3.6rem",
+  height: "3.6rem",
+  borderRadius: radius.md,
+  background: art.softBlue,
+  color: color.accent,
+});
+
+const middleNgStyle = css({ background: art.softRed, color: art.ng });
 
 const middleLabelStyle = css({
   fontSize: "0.8rem",
