@@ -29,7 +29,7 @@ for (
     ["/inside", "InsideExplorer", "IC チップ"],
     ["/tamper", "TamperLab", "耐タンパー性"],
     ["/phone", "PhoneSetup", "セキュアエレメント"],
-    ["/auth", "AuthFlow", "なぞの数字"],
+    ["/auth", "AuthFlow", "みんなに見せる数"],
     ["/anonymous", "PairwiseDemo", "サイトごとにちがう番号"],
     ["/digital-auth-app", "AppFlow", "OpenID Connect"],
   ] as const

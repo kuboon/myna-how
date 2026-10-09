@@ -56,7 +56,8 @@ export const chapters: readonly Chapter[] = [
     key: "auth",
     short: "本人確認",
     title: "どうやって「本人だ」とわかるの？",
-    lead: "カギと南京錠のしくみで、カギを持っている本人かどうか確かめるよ。",
+    lead:
+      "ひみつの数を使った計算で、本物のカードかどうか確かめるよ。じっさいに計算してみよう。",
     icon: "🔑",
   },
   {

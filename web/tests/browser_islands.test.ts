@@ -158,3 +158,29 @@ Deno.test({
     });
   },
 });
+
+Deno.test({
+  name: "lightpanda: /auth の計算で、本物はもどり、にせものはもどらない",
+  sanitizeResources: false,
+  sanitizeOps: false,
+  async fn() {
+    await withPage(async (page, origin) => {
+      await page.goto(`${origin}/auth`);
+      await page.waitForFunction("globalThis.__rmxReady === true", {
+        timeout: 10_000,
+      });
+      for (let i = 0; i < 3; i++) await clickButton(page, "すすむ");
+      // 5 を 7 回かけて 33 でわったあまり = 14、14 を 3 回かけて 33 でわったあまり = 5。
+      await page.waitForFunction(
+        () => document.body.textContent?.includes("5 にもどった"),
+        { timeout: 5_000 },
+      );
+      await clickButton(page, "にせものカード");
+      for (let i = 0; i < 3; i++) await clickButton(page, "すすむ");
+      await page.waitForFunction(
+        () => document.body.textContent?.includes("ログインできない"),
+        { timeout: 5_000 },
+      );
+    });
+  },
+});

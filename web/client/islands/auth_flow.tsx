@@ -1,15 +1,16 @@
 /**
- * Chapter 4's moving picture: how a website knows the card's owner is there, told with a key and
- * a padlock.
+ * Chapter 4's moving picture: the real mechanism, with small numbers.
  *
- * The chip's secret key has a matching padlock that anyone may hold (the public key, carried in
- * the certificate). The website puts a fresh random number in a box, locks it with that padlock and
- * sends it over. Only the chip's key opens the box, so a correct answer proves the key is there —
- * without the key ever leaving the chip. Two switches show why it is safe: a fake card's key does
- * not open the padlock, and an answer copied from last time is for a different number.
+ * This is RSA, the kind of public-key cryptography a My Number Card uses, shrunk until a child can
+ * follow it: the "big number" is 33 (= 3 × 11), the secret number (private key) is 7 and the shown
+ * number (public key) is 3. Raising to the 7th power and then to the 3rd, each time keeping only
+ * the remainder after dividing by 33, brings any number back to itself. The chip does the first
+ * half with its secret; the website does the second half with the public number and checks that
+ * it got its own number back.
  *
- * Real JPKI login is a signature rather than an encrypted box; the page's grown-up note says so.
- * The idea is the same: ask for something only the secret key can do.
+ * Every multiplication is shown, one per beat, because "multiply, then keep the remainder" is the
+ * whole of it — no metaphor needed. Two switches show why it is safe: a fake card does not know 7,
+ * and an answer copied from last time was for a different number.
  */
 
 import { clientEntry, css, type Handle, on } from "@remix-run/component";
@@ -25,22 +26,52 @@ import { art, color, radius } from "../tokens.ts";
 
 type Who = "real" | "fake" | "replay";
 
-/** The first number, fixed so the server and the browser render the same thing. */
-const FIRST_CHALLENGE = "4 8 1 5 2";
-/** The number from "last time", for the replay demo. */
-const OLD_CHALLENGE = "9 0 3 7 6";
+/** The toy key pair: 33 = 3 × 11, and 3 × 7 = 21 leaves 1 when divided by 20 = (3 − 1) × (11 − 1). */
+const N = 33;
+const SECRET = 7;
+const PUBLIC = 3;
+/** What a fake card guesses for the secret. */
+const FAKE_SECRET = 9;
 
-function newChallenge(): string {
-  const n = crypto.getRandomValues(new Uint32Array(1))[0] % 100000;
-  return String(n).padStart(5, "0").split("").join(" ");
+/** The first number, fixed so the server and the browser render the same thing. */
+const FIRST_CHALLENGE = 5;
+/** The number from "last time", for the replay demo. */
+const OLD_CHALLENGE = 8;
+
+/**
+ * Numbers that make a good demo: the secret calculation changes them, and a fake card's answer
+ * does not come back to them by luck.
+ */
+const CHALLENGES = Array.from({ length: N - 3 }, (_, i) => i + 2).filter((m) =>
+  power(m, SECRET).at(-1) !== m &&
+  power(power(m, FAKE_SECRET).at(-1)!, PUBLIC).at(-1) !== m
+);
+
+/**
+ * Multiplies `base` by itself `times` times, keeping the remainder after dividing by 33 at every
+ * step. Returns each intermediate result, starting from `base` itself.
+ */
+function power(base: number, times: number): number[] {
+  const out = [base];
+  let x = base;
+  for (let i = 1; i < times; i++) {
+    x = (x * base) % N;
+    out.push(x);
+  }
+  return out;
+}
+
+function newChallenge(previous: number): number {
+  const pool = CHALLENGES.filter((m) => m !== previous && m !== OLD_CHALLENGE);
+  return pool[crypto.getRandomValues(new Uint32Array(1))[0] % pool.length];
 }
 
 const captions = [
-  "カードを作ったとき、チップの中で<🔑 カギ>と、<そのカギでしか開かない 🔒 南京錠>がセットで作られたよ。カギはチップの中にしまったまま。南京錠のほうは、たくさん作って配ってもだいじょうぶ。サイトも持っているよ。",
-  "サイトに「マイナカードでログイン」とおすと、サイトは<毎回ちがう、なぞの数字>を決めて、📦 箱に入れるよ。",
-  "サイトは、その箱に<あなたの 🔒 南京錠>をかけて送ってくる。南京錠は、パチンとかけるのはだれでもできるけど、<開けられるのは、ペアのカギだけ>なんだ。",
-  "暗証番号が合ったら、チップは<中のカギで箱を開けて>、なぞの数字を読んで答えるよ。カギはチップの外に出さない。出ていくのは「答え」だけ。",
-  "サイトは答えを確かめる。<自分が箱に入れた数字と同じ>なら、カギを持っている本物の持ち主だ！ さいごに<J-LIS（カードを発行しているところ）>に「この南京錠、まだ使える？ なくしたりしてない？」と聞いて、OK ならログインできる。",
+  "サイトに「マイナカードでログイン」とおすと、サイトは<毎回ちがう数>を決めて、カードに送るよ。今回は <{m}> だ。",
+  "チップは、暗証番号が合ったら、中にしまってある<ひみつの数 7> を使って計算する。「{m} を <7 回かけて>、33 でわったあまり」を出すんだ。",
+  "チップは<答えだけ>をサイトに送る。ひみつの数 7 は、チップの外に出ないよ。",
+  "サイトは、証明書にのっている<みんなに見せる数 3> を使って、とどいた答えを「<3 回かけて>、33 でわったあまり」にする。<はじめの数 {m} にもどったら>、ひみつの数を持っている本物のカードだ！",
+  "さいごに<J-LIS（カードを発行しているところ）>に「この証明書、まだ使える？ なくしたりしてない？」と聞いて、OK ならログインできる。",
 ];
 
 export const AuthFlow = clientEntry(
@@ -57,19 +88,24 @@ export const AuthFlow = clientEntry(
 
     const choose = (w: Who) => {
       who = w;
-      step = 1;
-      challenge = newChallenge();
+      step = 0;
+      challenge = newChallenge(challenge);
       handle.update();
     };
 
     return () => {
-      const opened = who === "real";
-      const answer = who === "real"
-        ? challenge
-        : who === "replay"
-        ? OLD_CHALLENGE
-        : "？？？";
-      const ok = who === "real";
+      // What the card side sends back.
+      const signChain = who === "real"
+        ? power(challenge, SECRET)
+        : who === "fake"
+        ? power(challenge, FAKE_SECRET)
+        : power(OLD_CHALLENGE, SECRET);
+      const answer = signChain.at(-1)!;
+      // What the website gets when it checks that answer.
+      const checkChain = power(answer, PUBLIC);
+      const back = checkChain.at(-1)!;
+      const ok = back === challenge;
+      const fill = (text: string) => text.replaceAll("{m}", String(challenge));
 
       return (
         <div>
@@ -80,7 +116,7 @@ export const AuthFlow = clientEntry(
           >
             {(
               [
-                ["real", "🙂 本物の持ち主"],
+                ["real", "🙂 本物のカード"],
                 ["fake", "🦹 にせものカード"],
                 ["replay", "🕵️ まえの答えを使い回す"],
               ] as const
@@ -100,116 +136,124 @@ export const AuthFlow = clientEntry(
             ))}
           </div>
 
-          <div mix={sceneStyle}>
-            <div mix={partyStyle}>
-              <span mix={partyIconStyle} aria-hidden="true">💻</span>
+          <div mix={holdersStyle}>
+            <div mix={holderStyle}>
+              <span aria-hidden="true">💻</span>
               <strong>サイト</strong>
-              <div mix={boardStyle}>
-                <small>もっているもの</small>
-                <span mix={tokenStyle}>🔒 あなたの南京錠</span>
-                {step >= 1
-                  ? (
-                    <>
-                      <small>箱に入れた、なぞの数字</small>
-                      <span mix={numberStyle}>{challenge}</span>
-                    </>
-                  )
-                  : null}
-                {step >= 4
-                  ? (
-                    <span
-                      key={`v-${who}-${challenge}`}
-                      mix={[verdictStyle, ok ? okStyle : ngStyle]}
-                    >
-                      {ok ? "✅ 答えが合った！" : "❌ 答えがちがう"}
-                    </span>
-                  )
-                  : null}
-                {step >= 4 && ok
-                  ? (
-                    <span key="jlis" mix={[verdictStyle, okStyle]}>
-                      🏢 J-LIS「まだ使えるよ」
-                    </span>
-                  )
-                  : null}
-              </div>
+              <small>
+                みんなに見せる数 <b mix={pubStyle}>3</b> と <b>33</b>
+              </small>
             </div>
-
-            <div mix={wireStyle} aria-hidden="true">
-              {step === 2
-                ? (
-                  <span
-                    key={`box-${challenge}`}
-                    mix={[packetStyle, toRightStyle]}
-                  >
-                    📦🔒 →
-                  </span>
-                )
-                : step === 3 || step === 4
-                ? (
-                  <span key={`ans-${who}`} mix={[packetStyle, toLeftStyle]}>
-                    ← 💬
-                  </span>
-                )
-                : null}
-            </div>
-
-            <div mix={partyStyle}>
-              <span mix={partyIconStyle} aria-hidden="true">
+            <div mix={holderStyle}>
+              <span aria-hidden="true">
                 {who === "fake" ? "🦹" : who === "replay" ? "🕵️" : "🪪"}
               </span>
               <strong>
-                {who === "real" ? "カードのチップ" : "あやしい人"}
+                {who === "real"
+                  ? "カードのチップ"
+                  : who === "fake"
+                  ? "にせものカード"
+                  : "のぞき見した人"}
               </strong>
-              <div mix={boardStyle}>
-                <small>もっているもの</small>
-                <span mix={tokenStyle}>
-                  {who === "fake"
-                    ? "🗝️ にせもののカギ"
-                    : who === "replay"
-                    ? "📝 まえの答えのメモ"
-                    : "🔑 ひみつのカギ（中だけ）"}
-                </span>
-                {step >= 3
+              <small>
+                {who === "real"
                   ? (
                     <>
-                      <small>とどいた箱</small>
-                      <span
-                        key={`open-${who}-${challenge}`}
-                        mix={[boxStyle, opened ? popStyle : shakeStyle]}
-                      >
-                        {opened
-                          ? "📦🔓 開いた！"
-                          : who === "fake"
-                          ? "📦🔒 開かない…"
-                          : "📦🔒 開けられない"}
-                      </span>
-                      <small>答え</small>
-                      <span mix={numberStyle}>{answer}</span>
+                      ひみつの数 <b mix={secretStyle}>7</b>（中だけ）
                     </>
                   )
-                  : step === 2
+                  : who === "fake"
                   ? (
                     <>
-                      <small>とどいた箱</small>
-                      <span mix={boxStyle}>📦🔒</span>
+                      7 を知らないので <b mix={secretStyle}>9</b> でためす
                     </>
                   )
-                  : null}
-              </div>
+                  : <>まえの答え（数 {OLD_CHALLENGE} のときのもの）</>}
+              </small>
             </div>
           </div>
 
-          <p key={`c-${step}-${who}`} mix={captionStyle} aria-live="polite">
-            {emphasize(captions[step])}
+          <div mix={boardStyle} aria-live="polite">
+            <p mix={challengeStyle}>
+              今回の数：<b mix={bigNumberStyle}>{challenge}</b>
+            </p>
+
+            {step >= 1
+              ? (
+                <p mix={ruleStyle}>
+                  計算のきまり：かけ算をするたびに、<b>
+                    33 でわったあまり
+                  </b>だけをのこす（例：25 × 5 = 125 → 125 ÷ 33 = 3 あまり{" "}
+                  <b>26</b>）
+                </p>
+              )
+              : null}
+
+            {step >= 1
+              ? (
+                <div key={`sign-${who}-${challenge}`}>
+                  <p mix={rowTitleStyle}>
+                    {who === "real"
+                      ? "チップの計算（ひみつの数 7 を使う）"
+                      : who === "fake"
+                      ? "にせものカードの計算（9 でためす）"
+                      : `計算しないで、まえの答えをそのまま送る（数 ${OLD_CHALLENGE} の答え）`}
+                  </p>
+                  {who === "replay"
+                    ? <Chain chain={[answer]} base={null} />
+                    : <Chain chain={signChain} base={challenge} />}
+                </div>
+              )
+              : null}
+
+            {step >= 2
+              ? (
+                <p key={`send-${who}-${challenge}`} mix={sendStyle}>
+                  📨 サイトへ送るもの：答え <b mix={bigNumberStyle}>{answer}</b>
+                  {"　"}
+                  <small>（ひみつの数は送らない）</small>
+                </p>
+              )
+              : null}
+
+            {step >= 3
+              ? (
+                <div key={`check-${who}-${challenge}`}>
+                  <p mix={rowTitleStyle}>
+                    サイトのたしかめ（みんなに見せる数 3 を使う）
+                  </p>
+                  <Chain chain={checkChain} base={answer} />
+                  <p
+                    mix={[verdictStyle, ok ? okStyle : ngStyle]}
+                    style={{ animationDelay: `${checkChain.length * 0.45}s` }}
+                  >
+                    {ok
+                      ? `✅ ${back} にもどった！ 今回の数 ${challenge} と同じ → 本物のカード`
+                      : `❌ ${back} になった。今回の数 ${challenge} とちがう → ログインできない`}
+                  </p>
+                </div>
+              )
+              : null}
+
+            {step >= 4 && ok
+              ? (
+                <p mix={[verdictStyle, okStyle]}>
+                  🏢 J-LIS「この証明書は、まだ使えるよ」→ ログインできた！
+                </p>
+              )
+              : null}
+          </div>
+
+          <p key={`c-${step}-${who}`} mix={captionStyle}>
+            {emphasize(fill(captions[step]))}
             {step >= 3 && who === "fake"
               ? (
                 <>
                   <br />
                   <strong>
-                    にせもののカギでは、あなたの南京錠は開かない。
+                    ひみつの数を知らないと、もとの数にもどる答えは作れない。
                   </strong>
-                  中の数字がわからないから、正しく答えられないよ。
+                  だから、にせものカードはログインできないよ。
                 </>
               )
               : null}
@@ -218,9 +262,9 @@ export const AuthFlow = clientEntry(
                 <>
                   <br />
                   <strong>
-                    まえにのぞき見た答え（{OLD_CHALLENGE}）を送っても、今回の箱の数字とはちがう。
+                    まえの答えは、まえの数（{OLD_CHALLENGE}）にもどる答え。今回の数とはちがうね。
                   </strong>
-                  毎回ちがう数字にするのは、このためなんだ。
+                  毎回ちがう数を使うのは、このためなんだ。
                 </>
               )
               : null}
@@ -237,7 +281,7 @@ export const AuthFlow = clientEntry(
                     on("click", () => choose(who)),
                   ]}
                 >
-                  🔢 新しい数字でもう一回
+                  🔢 ちがう数でもう一回
                 </button>
               </p>
             )
@@ -247,6 +291,34 @@ export const AuthFlow = clientEntry(
     };
   },
 );
+
+/**
+ * One calculation, a multiplication per beat: `base`, then "× base → remainder" until the end.
+ * With `base` null the chain is a single number that was not calculated at all.
+ */
+function Chain(handle: Handle<{ chain: number[]; base: number | null }>) {
+  return () => {
+    const { chain, base } = handle.props;
+    return (
+      <ol mix={chainStyle}>
+        {chain.map((value, i) => (
+          <li
+            key={i}
+            mix={chainItemStyle}
+            style={{ animationDelay: `${i * 0.45}s` }}
+          >
+            {i === 0 ? <b>{value}</b> : (
+              <>
+                <small>×{base}→</small>
+                <b>{value}</b>
+              </>
+            )}
+          </li>
+        ))}
+      </ol>
+    );
+  };
+}
 
 const chooserStyle = css({
   display: "flex",
@@ -267,84 +339,101 @@ const chooserButtonStyle = css({
   },
 });
 
-const sceneStyle = css({
+const holdersStyle = css({
   display: "grid",
-  gridTemplateColumns: "minmax(0, 1fr) 3.5rem minmax(0, 1fr)",
-  alignItems: "start",
-  gap: "0.25rem",
+  gridTemplateColumns: "1fr 1fr",
+  gap: "0.5rem",
 });
 
-const partyStyle = css({
+const holderStyle = css({
   display: "flex",
   flexDirection: "column",
   alignItems: "center",
-  gap: "0.2rem",
-  textAlign: "center",
-});
-
-const partyIconStyle = css({ fontSize: "2.4rem" });
-
-const boardStyle = css({
-  width: "100%",
-  minHeight: "11rem",
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "center",
-  gap: "0.25rem",
-  padding: "0.6rem",
+  gap: "0.1rem",
+  padding: "0.5rem",
   borderRadius: radius.md,
   background: color.card,
+  textAlign: "center",
+  "& > span": { fontSize: "2rem" },
+  "& small": { fontSize: "0.8rem", lineHeight: 1.5 },
+});
+
+const pubStyle = css({ color: color.accent, fontSize: "1.1rem" });
+const secretStyle = css({ color: art.warm, fontSize: "1.1rem" });
+
+const boardStyle = css({
+  marginTop: "0.6rem",
+  padding: "0.75rem",
+  minHeight: "8rem",
   border: `1px solid ${color.border}`,
+  borderRadius: radius.md,
+  background: color.bg,
+  "& p": { margin: "0.3rem 0" },
+});
+
+const ruleStyle = css({
+  padding: "0.3rem 0.6rem",
+  borderRadius: radius.sm,
+  background: color.card,
+  fontSize: "0.85rem !important",
+  lineHeight: "1.6 !important",
+});
+
+const challengeStyle = css({ fontWeight: 700, textAlign: "center" });
+
+const bigNumberStyle = css({
+  fontFamily: "var(--font-mono)",
+  fontSize: "1.4rem",
+  padding: "0 0.3rem",
+});
+
+const rowTitleStyle = css({
+  marginTop: "0.6rem !important",
+  fontWeight: 700,
+  fontSize: "0.9rem !important",
+  color: color.muted,
+});
+
+const chainStyle = css({
+  display: "flex",
+  flexWrap: "wrap",
+  gap: "0.3rem",
+  margin: 0,
+  padding: 0,
+  listStyle: "none",
+});
+
+const chainItemStyle = css({
+  display: "inline-flex",
+  alignItems: "baseline",
+  gap: "0.15rem",
+  margin: 0,
+  padding: "0.15rem 0.45rem",
+  borderRadius: "999px",
+  background: art.softBlue,
+  fontFamily: "var(--font-mono)",
+  fontSize: "1rem !important",
+  lineHeight: "1.6 !important",
+  animation: "pop-in 300ms ease-out both",
   "& small": { color: color.muted, fontSize: "0.75rem" },
 });
 
-const tokenStyle = css({
-  padding: "0.1rem 0.5rem",
-  borderRadius: "999px",
-  background: art.goldLight,
+const sendStyle = css({
+  marginTop: "0.6rem !important",
   fontWeight: 700,
-  fontSize: "0.8rem",
+  animation: "pop-in 350ms ease-out",
+  "& small": { color: color.muted, fontWeight: 400 },
 });
-
-const numberStyle = css({
-  fontFamily: "var(--font-mono)",
-  fontWeight: 800,
-  fontSize: "1.1rem",
-  letterSpacing: "0.05em",
-});
-
-const boxStyle = css({ fontSize: "1.1rem", fontWeight: 800 });
-
-const popStyle = css({ animation: "pop-in 400ms ease-out" });
-const shakeStyle = css({ animation: "shake 400ms ease-in-out 2" });
 
 const verdictStyle = css({
-  padding: "0.1rem 0.5rem",
+  padding: "0.4rem 0.6rem",
   borderRadius: radius.sm,
   fontWeight: 800,
-  fontSize: "0.85rem",
-  animation: "pop-in 350ms ease-out",
+  fontSize: "0.95rem !important",
+  animation: "pop-in 350ms ease-out both",
 });
 
 const okStyle = css({ background: art.softGreen, color: art.ok });
 const ngStyle = css({ background: art.softRed, color: art.ng });
-
-const wireStyle = css({
-  alignSelf: "center",
-  display: "flex",
-  justifyContent: "center",
-  height: "2rem",
-  borderBottom: `3px dotted ${color.border}`,
-});
-
-const packetStyle = css({
-  fontSize: "1.1rem",
-  whiteSpace: "nowrap",
-});
-
-const toRightStyle = css({
-  animation: "travel-right 1.2s ease-in-out infinite",
-});
-const toLeftStyle = css({ animation: "travel-left 1.2s ease-in-out infinite" });
 
 const againStyle = css({ textAlign: "center" });
