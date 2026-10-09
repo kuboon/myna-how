@@ -22,6 +22,20 @@ export const color = {
   card: "var(--card)",
 } as const;
 
+/** The illustrations' palette: the card, the chip, and "OK" / "NG" signals. */
+export const art = {
+  warm: "var(--warm)",
+  gold: "var(--gold)",
+  goldLight: "var(--gold-light)",
+  ok: "var(--ok)",
+  ng: "var(--ng)",
+  ink: "var(--ink)",
+  paper: "var(--paper)",
+  softBlue: "var(--soft-blue)",
+  softGreen: "var(--soft-green)",
+  softRed: "var(--soft-red)",
+} as const;
+
 export const font = {
   sans: "var(--font-sans)",
   mono: "var(--font-mono)",

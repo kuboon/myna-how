@@ -27,8 +27,7 @@
  * stack is ordered so kana never gets drawn by a Latin font, and `palt` is what stops a line of
  * 日本語 setting with a hole after every 、. They are here rather than behind a language check
  * because they cost nothing for Latin text — a font that has no kana is never asked to draw any.
- * The document's own language is `layout.tsx`'s `<html lang>`, and it says `en` because every word
- * this template ships is English; a site writing in Japanese changes that one attribute.
+ * The document's own language is `layout.tsx`'s `<html lang>`, which is `ja`.
  */
 
 @layer base, rmx, app;
@@ -53,28 +52,50 @@
     --radius-lg: 0.75rem;
 
     /* The measure every band of the shell lines up to. */
-    --content-width: 44rem;
+    --content-width: 46rem;
 
-    --bg: #ffffff;
+    --bg: #fffdf8;
     --fg: #1f2937;
-    --muted: #6b7280;
-    --accent: #2563eb;
+    --muted: #5b6474;
+    --accent: #2f6fde;
     /* Text on an --accent background — dark in dark mode, where the accent is light. */
     --on-accent: #ffffff;
-    --border: #e5e7eb;
+    --border: #e6e1d6;
     /* A raised-but-quiet surface: cards, code, callouts. */
-    --card: #f9fafb;
+    --card: #fff7e8;
+
+    /* The illustrations' palette. */
+    --warm: #f08a4b;
+    --gold: #d9a520;
+    --gold-light: #f6d77a;
+    --ok: #18a058;
+    --ng: #e0434a;
+    --ink: #1f2937;
+    --paper: #ffffff;
+    --soft-blue: #e7f0ff;
+    --soft-green: #e4f7ec;
+    --soft-red: #fde8e8;
   }
 
   @media (prefers-color-scheme: dark) {
     :root {
-      --bg: #0b0f19;
-      --fg: #e5e7eb;
-      --muted: #9ca3af;
-      --accent: #60a5fa;
-      --on-accent: #0b0f19;
-      --border: #1f2937;
-      --card: #111827;
+      --bg: #12151d;
+      --fg: #e9ecf2;
+      --muted: #a3abb9;
+      --accent: #7aa8ff;
+      --on-accent: #10131a;
+      --border: #2b3140;
+      --card: #1b2030;
+      --warm: #ff9f66;
+      --gold: #e8b93a;
+      --gold-light: #6b5520;
+      --ok: #3ccf7e;
+      --ng: #ff6b70;
+      --ink: #e9ecf2;
+      --paper: #232a3b;
+      --soft-blue: #1d2b48;
+      --soft-green: #17352a;
+      --soft-red: #3d1f24;
     }
   }
 
@@ -110,9 +131,29 @@
   }
 
   h1 {
-    font-size: 2rem;
-    line-height: 1.2;
+    font-size: 1.9rem;
+    line-height: 1.3;
     margin-top: 0;
+  }
+
+  h2 {
+    font-size: 1.35rem;
+    line-height: 1.35;
+    margin-top: 2.5rem;
+  }
+
+  p,
+  li {
+    font-size: 1.05rem;
+    line-height: 1.9;
+  }
+
+  button {
+    font: inherit;
+  }
+
+  svg text {
+    font-family: var(--font-sans);
   }
 
   code {
@@ -137,30 +178,131 @@
 }
 
 /*
- * The share buttons — `<share-buttons>`, from @kuboon/share-element, on the line under each
- * article. See `client/islands/share.tsx` for the other half.
- *
- * It renders in light DOM with `:where(...)` defaults exactly so a page can restyle it, and this
- * is a page doing that: the package's own borders and backgrounds are fixed light-mode greys, so
- * without these three rules the buttons would stay white-on-white in dark mode. Nothing here
- * touches layout or which buttons are shown — the row is a flex line and the collapse to the
- * native share sheet on a touch device are both the package's, and both are what this site wants.
- *
- * Unlayered, and that is the part not to "tidy up" into `@layer app`. The package appends its
- * defaults as a plain `<style>` with no layer of its own, and unlayered CSS outranks every layer
- * whatever the specificity — so a rule in `app` loses to `:where(.share-buttons__button)` even
- * though `:where()` counts for nothing. Verified both ways in Chromium.
+ * Keyframes for the illustrations. A `css(...)` mixin can name an animation but cannot declare
+ * one, so every `@keyframes` the islands and pages use lives here.
  */
+@layer base {
+  @keyframes spin-card {
+    0%,
+    15% {
+      transform: rotateY(0deg);
+    }
+    45%,
+    65% {
+      transform: rotateY(180deg);
+    }
+    95%,
+    100% {
+      transform: rotateY(360deg);
+    }
+  }
 
-.share-buttons__button {
-  border-color: var(--border);
-  border-radius: var(--radius-md);
-  background: var(--bg);
-  color: var(--fg);
-}
+  @keyframes float {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-6px);
+    }
+  }
 
-.share-buttons__button:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-  background: var(--bg);
+  @keyframes pop-in {
+    from {
+      opacity: 0;
+      transform: scale(0.85) translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes shake {
+    0%,
+    100% {
+      transform: translateX(0);
+    }
+    20%,
+    60% {
+      transform: translateX(-6px);
+    }
+    40%,
+    80% {
+      transform: translateX(6px);
+    }
+  }
+
+  @keyframes pulse-ring {
+    0% {
+      box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 45%, transparent);
+    }
+    100% {
+      box-shadow: 0 0 0 14px transparent;
+    }
+  }
+
+  @keyframes travel-right {
+    from {
+      transform: translateX(-40%);
+      opacity: 0;
+    }
+    30% {
+      opacity: 1;
+    }
+    to {
+      transform: translateX(40%);
+      opacity: 1;
+    }
+  }
+
+  @keyframes travel-left {
+    from {
+      transform: translateX(40%);
+      opacity: 0;
+    }
+    30% {
+      opacity: 1;
+    }
+    to {
+      transform: translateX(-40%);
+      opacity: 1;
+    }
+  }
+
+  @keyframes stamp {
+    0% {
+      transform: scale(2) rotate(-12deg);
+      opacity: 0;
+    }
+    60% {
+      transform: scale(0.9) rotate(-12deg);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(1) rotate(-12deg);
+      opacity: 1;
+    }
+  }
+
+  @keyframes waves {
+    0% {
+      opacity: 0.9;
+      transform: scale(0.6);
+    }
+    100% {
+      opacity: 0;
+      transform: scale(1.4);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
 }

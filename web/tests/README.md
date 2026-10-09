@@ -1,9 +1,8 @@
 # web/tests — ブラウザ smoke
 
 opt-in のブラウザテスト。デフォルトの `deno task test`
-には含まれず、`deno
-task test:browser` で明示的に起動する。 lightpanda
-バイナリは npm:@lightpanda/browser の postinstall scriptでビルドされる。
+には含まれず、`deno task test:browser` で明示的に起動する。 lightpanda
+バイナリは npm:@lightpanda/browser の postinstall script でビルドされる。
 
 ## 前提
 
@@ -18,7 +17,11 @@ deno task test:browser    # root から
 
 ## カバー範囲
 
-- `browser_hydration.test.ts` — `/hydration` を開き、`globalThis.__rmxReady`
-  が立つまで待ってから `button[aria-label="increment"]` をクリックし、`<output>`
-  の数値が +1 される事を assert する。SSR → chunk の動的 import →
-  `handle.update()` のフル経路を exercise する。
+- `browser_islands.test.ts`
+  - `/inside` — hydrate
+    後に「チップの中を見る」を押すと、部屋のとびらが出て、「入っていないもの」のパネルが開くこと。
+  - `/tamper` — 暗証番号パッドで 3 回まちがえると、チップが `locked`
+    になること。
+  - `/auth` —
+    本物のカードの電子署名はたしかめると合い、にせものカードと、のぞき見した人による
+    1 回目の電子署名の使い回しは合わないこと。
