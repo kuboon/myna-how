@@ -63,7 +63,7 @@ export default function Inside(_handle: Handle) {
           <span>
             <strong>
               カギを使う。
-            </strong>中にしまってある「ひみつのカギ」を使って、「本人です」と証明する答え（電子署名）を、チップの中で作る。
+            </strong>中にしまってある「ひみつのカギ」を使って、「本人です」と証明するしるし（電子署名）を、チップの中で作る。
           </span>
         </li>
         <li>

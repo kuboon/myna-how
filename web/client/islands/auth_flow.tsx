@@ -1,16 +1,14 @@
 /**
- * Chapter 4's moving picture: the real mechanism, with small numbers.
+ * Chapter 4's moving picture: how a website checks that the card's owner is there.
  *
- * This is RSA, the kind of public-key cryptography a My Number Card uses, shrunk until a child can
- * follow it: the "big number" is 33 (= 3 × 11), the secret number (private key) is 7 and the shown
- * number (public key) is 3. Raising to the 7th power and then to the 3rd, each time keeping only
- * the remainder after dividing by 33, brings any number back to itself. The chip does the first
- * half with its secret; the website does the second half with the public number and checks that
- * it got its own number back.
+ * Told with the real names and no metaphor or arithmetic: the website sends a fresh question, the
+ * chip attaches an electronic signature made with its secret key, and the website checks that
+ * signature with the public key in the certificate, then asks J-LIS whether the certificate is
+ * still valid. Two switches show why it is safe: a fake card has no secret key, and a signature
+ * copied from last time was made for a different question.
  *
- * Every multiplication is shown, one per beat, because "multiply, then keep the remainder" is the
- * whole of it — no metaphor needed. Two switches show why it is safe: a fake card does not know 7,
- * and an answer copied from last time was for a different number.
+ * The signature shown is a stand-in — a short code derived from the question and whose key made
+ * it — so the same card and question always give the same code and anything else gives another.
  */
 
 import { clientEntry, css, type Handle, on } from "@remix-run/component";
@@ -26,52 +24,40 @@ import { art, color, radius } from "../tokens.ts";
 
 type Who = "real" | "fake" | "replay";
 
-/** The toy key pair: 33 = 3 × 11, and 3 × 7 = 21 leaves 1 when divided by 20 = (3 − 1) × (11 − 1). */
-const N = 33;
-const SECRET = 7;
-const PUBLIC = 3;
-/** What a fake card guesses for the secret. */
-const FAKE_SECRET = 9;
-
-/** The first number, fixed so the server and the browser render the same thing. */
-const FIRST_CHALLENGE = 5;
-/** The number from "last time", for the replay demo. */
-const OLD_CHALLENGE = 8;
-
-/**
- * Numbers that make a good demo: the secret calculation changes them, and a fake card's answer
- * does not come back to them by luck.
- */
-const CHALLENGES = Array.from({ length: N - 3 }, (_, i) => i + 2).filter((m) =>
-  power(m, SECRET).at(-1) !== m &&
-  power(power(m, FAKE_SECRET).at(-1)!, PUBLIC).at(-1) !== m
-);
-
-/**
- * Multiplies `base` by itself `times` times, keeping the remainder after dividing by 33 at every
- * step. Returns each intermediate result, starting from `base` itself.
- */
-function power(base: number, times: number): number[] {
-  const out = [base];
-  let x = base;
-  for (let i = 1; i < times; i++) {
-    x = (x * base) % N;
-    out.push(x);
+/** A stand-in signature: looks like a jumble, depends on the question and on whose key made it. */
+function signatureOf(question: string, key: string): string {
+  let h = 2166136261;
+  for (const ch of key + ":" + question) {
+    h ^= ch.charCodeAt(0);
+    h = Math.imul(h, 16777619) >>> 0;
   }
-  return out;
+  let out = "";
+  for (let i = 0; i < 4; i++) {
+    out += (h >>> (i * 8) & 0xff).toString(16).padStart(2, "0");
+    h = Math.imul(h ^ (h >>> 13), 2246822507) >>> 0;
+  }
+  return `${out.slice(0, 4)}…${out.slice(4)}`;
 }
 
-function newChallenge(previous: number): number {
-  const pool = CHALLENGES.filter((m) => m !== previous && m !== OLD_CHALLENGE);
-  return pool[crypto.getRandomValues(new Uint32Array(1))[0] % pool.length];
+const REAL_KEY = "card";
+const FAKE_KEY = "fake";
+
+/** The first question, fixed so the server and the browser render the same thing. */
+const FIRST_QUESTION = "4 8 1 5 2";
+/** The question from "last time", for the replay demo. */
+const OLD_QUESTION = "9 0 3 7 6";
+
+function newQuestion(): string {
+  const n = crypto.getRandomValues(new Uint32Array(1))[0] % 100000;
+  return String(n).padStart(5, "0").split("").join(" ");
 }
 
 const captions = [
-  "サイトに「マイナカードでログイン」とおすと、サイトは<毎回ちがう数>を決めて、カードに送るよ。今回は <{m}> だ。",
-  "チップは、暗証番号が合ったら、中にしまってある<ひみつの数 7> を使って計算する。「{m} を <7 回かけて>、33 でわったあまり」を出すんだ。",
-  "チップは<答えだけ>をサイトに送る。ひみつの数 7 は、チップの外に出ないよ。",
-  "サイトは、証明書にのっている<みんなに見せる数 3> を使って、とどいた答えを「<3 回かけて>、33 でわったあまり」にする。<はじめの数 {m} にもどったら>、ひみつの数を持っている本物のカードだ！",
-  "さいごに<J-LIS（カードを発行しているところ）>に「この証明書、まだ使える？ なくしたりしてない？」と聞いて、OK ならログインできる。",
+  "サイトに「マイナカードでログイン」とおすと、サイトは<毎回ちがう「問題」>を作って、カードに送ってくるよ。",
+  "暗証番号が合ったら、チップは中の<ひみつのカギ（秘密鍵）>を使って、問題に<電子署名>をつける。電子署名は、そのカードのひみつのカギでしか作れないしるしなんだ。",
+  "チップは、<電子署名>と<電子証明書>をサイトに送る。ひみつのカギは送らない。チップの外には一度も出ないよ。",
+  "サイトは、電子証明書にのっている<公開のカギ（公開鍵）>で、電子署名をたしかめる。公開のカギでは電子署名は作れないけれど、<本物かどうかはわかる>んだ。",
+  "さいごに<J-LIS（カードを発行しているところ）>に「この電子証明書、まだ使える？ なくしたりしてない？」と聞く。OK なら、ログインできる！",
 ];
 
 export const AuthFlow = clientEntry(
@@ -79,7 +65,7 @@ export const AuthFlow = clientEntry(
   function AuthFlow(handle: Handle) {
     let step = 0;
     let who: Who = "real";
-    let challenge = FIRST_CHALLENGE;
+    let question = FIRST_QUESTION;
 
     const go = (next: number) => {
       step = Math.max(0, Math.min(captions.length - 1, next));
@@ -89,23 +75,15 @@ export const AuthFlow = clientEntry(
     const choose = (w: Who) => {
       who = w;
       step = 0;
-      challenge = newChallenge(challenge);
+      question = newQuestion();
       handle.update();
     };
 
     return () => {
-      // What the card side sends back.
-      const signChain = who === "real"
-        ? power(challenge, SECRET)
-        : who === "fake"
-        ? power(challenge, FAKE_SECRET)
-        : power(OLD_CHALLENGE, SECRET);
-      const answer = signChain.at(-1)!;
-      // What the website gets when it checks that answer.
-      const checkChain = power(answer, PUBLIC);
-      const back = checkChain.at(-1)!;
-      const ok = back === challenge;
-      const fill = (text: string) => text.replaceAll("{m}", String(challenge));
+      const signedQuestion = who === "replay" ? OLD_QUESTION : question;
+      const key = who === "fake" ? FAKE_KEY : REAL_KEY;
+      const signature = signatureOf(signedQuestion, key);
+      const ok = signature === signatureOf(question, REAL_KEY);
 
       return (
         <div>
@@ -118,7 +96,7 @@ export const AuthFlow = clientEntry(
               [
                 ["real", "🙂 本物のカード"],
                 ["fake", "🦹 にせものカード"],
-                ["replay", "🕵️ まえの答えを使い回す"],
+                ["replay", "🕵️ まえの電子署名を使い回す"],
               ] as const
             ).map(([w, label]) => (
               <button
@@ -136,16 +114,54 @@ export const AuthFlow = clientEntry(
             ))}
           </div>
 
-          <div mix={holdersStyle}>
-            <div mix={holderStyle}>
-              <span aria-hidden="true">💻</span>
+          <div mix={sceneStyle}>
+            <div mix={partyStyle}>
+              <span mix={partyIconStyle} aria-hidden="true">💻</span>
               <strong>サイト</strong>
-              <small>
-                みんなに見せる数 <b mix={pubStyle}>3</b> と <b>33</b>
-              </small>
+              <div mix={boardStyle}>
+                <small>今回の問題</small>
+                <span mix={questionStyle}>{question}</span>
+                {step >= 3
+                  ? (
+                    <>
+                      <small>公開のカギでたしかめると…</small>
+                      <span
+                        key={`v-${who}-${question}`}
+                        mix={[verdictStyle, ok ? okStyle : ngStyle]}
+                      >
+                        {ok ? "✅ 本物の電子署名" : "❌ 合わない"}
+                      </span>
+                    </>
+                  )
+                  : null}
+                {step >= 4 && ok
+                  ? (
+                    <span key="jlis" mix={[verdictStyle, okStyle]}>
+                      🏢 J-LIS「まだ使えるよ」
+                    </span>
+                  )
+                  : null}
+              </div>
             </div>
-            <div mix={holderStyle}>
-              <span aria-hidden="true">
+
+            <div mix={wireStyle} aria-hidden="true">
+              {step === 0
+                ? (
+                  <span key={`q-${question}`} mix={[packetStyle, toRightStyle]}>
+                    ❓ →
+                  </span>
+                )
+                : step === 2
+                ? (
+                  <span key="s" mix={[packetStyle, toLeftStyle]}>
+                    ← ✍️📜
+                  </span>
+                )
+                : null}
+            </div>
+
+            <div mix={partyStyle}>
+              <span mix={partyIconStyle} aria-hidden="true">
                 {who === "fake" ? "🦹" : who === "replay" ? "🕵️" : "🪪"}
               </span>
               <strong>
@@ -155,105 +171,46 @@ export const AuthFlow = clientEntry(
                   ? "にせものカード"
                   : "のぞき見した人"}
               </strong>
-              <small>
-                {who === "real"
+              <div mix={boardStyle}>
+                <small>もっているもの</small>
+                <span mix={tokenStyle}>
+                  {who === "fake"
+                    ? "ひみつのカギがない"
+                    : who === "replay"
+                    ? "まえの電子署名のメモ"
+                    : "🔑 ひみつのカギ（中だけ）"}
+                </span>
+                {step >= 1
                   ? (
                     <>
-                      ひみつの数 <b mix={secretStyle}>7</b>（中だけ）
+                      <small>
+                        {who === "replay"
+                          ? `まえの問題（${OLD_QUESTION}）の電子署名`
+                          : "つけた電子署名"}
+                      </small>
+                      <span
+                        key={`sig-${who}-${question}`}
+                        mix={signatureStyle}
+                      >
+                        ✍️ {signature}
+                      </span>
                     </>
                   )
-                  : who === "fake"
-                  ? (
-                    <>
-                      7 を知らないので <b mix={secretStyle}>9</b> でためす
-                    </>
-                  )
-                  : <>まえの答え（数 {OLD_CHALLENGE} のときのもの）</>}
-              </small>
+                  : null}
+              </div>
             </div>
           </div>
 
-          <div mix={boardStyle} aria-live="polite">
-            <p mix={challengeStyle}>
-              今回の数：<b mix={bigNumberStyle}>{challenge}</b>
-            </p>
-
-            {step >= 1
-              ? (
-                <p mix={ruleStyle}>
-                  計算のきまり：かけ算をするたびに、<b>
-                    33 でわったあまり
-                  </b>だけをのこす（例：25 × 5 = 125 → 125 ÷ 33 = 3 あまり{" "}
-                  <b>26</b>）
-                </p>
-              )
-              : null}
-
-            {step >= 1
-              ? (
-                <div key={`sign-${who}-${challenge}`}>
-                  <p mix={rowTitleStyle}>
-                    {who === "real"
-                      ? "チップの計算（ひみつの数 7 を使う）"
-                      : who === "fake"
-                      ? "にせものカードの計算（9 でためす）"
-                      : `計算しないで、まえの答えをそのまま送る（数 ${OLD_CHALLENGE} の答え）`}
-                  </p>
-                  {who === "replay"
-                    ? <Chain chain={[answer]} base={null} />
-                    : <Chain chain={signChain} base={challenge} />}
-                </div>
-              )
-              : null}
-
-            {step >= 2
-              ? (
-                <p key={`send-${who}-${challenge}`} mix={sendStyle}>
-                  📨 サイトへ送るもの：答え <b mix={bigNumberStyle}>{answer}</b>
-                  {"　"}
-                  <small>（ひみつの数は送らない）</small>
-                </p>
-              )
-              : null}
-
-            {step >= 3
-              ? (
-                <div key={`check-${who}-${challenge}`}>
-                  <p mix={rowTitleStyle}>
-                    サイトのたしかめ（みんなに見せる数 3 を使う）
-                  </p>
-                  <Chain chain={checkChain} base={answer} />
-                  <p
-                    mix={[verdictStyle, ok ? okStyle : ngStyle]}
-                    style={{ animationDelay: `${checkChain.length * 0.45}s` }}
-                  >
-                    {ok
-                      ? `✅ ${back} にもどった！ 今回の数 ${challenge} と同じ → 本物のカード`
-                      : `❌ ${back} になった。今回の数 ${challenge} とちがう → ログインできない`}
-                  </p>
-                </div>
-              )
-              : null}
-
-            {step >= 4 && ok
-              ? (
-                <p mix={[verdictStyle, okStyle]}>
-                  🏢 J-LIS「この証明書は、まだ使えるよ」→ ログインできた！
-                </p>
-              )
-              : null}
-          </div>
-
-          <p key={`c-${step}-${who}`} mix={captionStyle}>
-            {emphasize(fill(captions[step]))}
+          <p key={`c-${step}-${who}`} mix={captionStyle} aria-live="polite">
+            {emphasize(captions[step])}
             {step >= 3 && who === "fake"
               ? (
                 <>
                   <br />
                   <strong>
-                    ひみつの数を知らないと、もとの数にもどる答えは作れない。
+                    ひみつのカギがないと、本物の電子署名は作れない。
                   </strong>
-                  だから、にせものカードはログインできないよ。
+                  だから、たしかめると合わないよ。
                 </>
               )
               : null}
@@ -262,9 +219,9 @@ export const AuthFlow = clientEntry(
                 <>
                   <br />
                   <strong>
-                    まえの答えは、まえの数（{OLD_CHALLENGE}）にもどる答え。今回の数とはちがうね。
+                    まえの電子署名は、まえの問題につけたもの。今回の問題とはちがうから合わない。
                   </strong>
-                  毎回ちがう数を使うのは、このためなんだ。
+                  毎回ちがう問題を出すのは、このためなんだ。
                 </>
               )
               : null}
@@ -281,7 +238,7 @@ export const AuthFlow = clientEntry(
                     on("click", () => choose(who)),
                   ]}
                 >
-                  🔢 ちがう数でもう一回
+                  ❓ ちがう問題でもう一回
                 </button>
               </p>
             )
@@ -291,34 +248,6 @@ export const AuthFlow = clientEntry(
     };
   },
 );
-
-/**
- * One calculation, a multiplication per beat: `base`, then "× base → remainder" until the end.
- * With `base` null the chain is a single number that was not calculated at all.
- */
-function Chain(handle: Handle<{ chain: number[]; base: number | null }>) {
-  return () => {
-    const { chain, base } = handle.props;
-    return (
-      <ol mix={chainStyle}>
-        {chain.map((value, i) => (
-          <li
-            key={i}
-            mix={chainItemStyle}
-            style={{ animationDelay: `${i * 0.45}s` }}
-          >
-            {i === 0 ? <b>{value}</b> : (
-              <>
-                <small>×{base}→</small>
-                <b>{value}</b>
-              </>
-            )}
-          </li>
-        ))}
-      </ol>
-    );
-  };
-}
 
 const chooserStyle = css({
   display: "flex",
@@ -339,101 +268,86 @@ const chooserButtonStyle = css({
   },
 });
 
-const holdersStyle = css({
+const sceneStyle = css({
   display: "grid",
-  gridTemplateColumns: "1fr 1fr",
-  gap: "0.5rem",
+  gridTemplateColumns: "minmax(0, 1fr) 3.5rem minmax(0, 1fr)",
+  alignItems: "start",
+  gap: "0.25rem",
 });
 
-const holderStyle = css({
+const partyStyle = css({
   display: "flex",
   flexDirection: "column",
   alignItems: "center",
-  gap: "0.1rem",
-  padding: "0.5rem",
-  borderRadius: radius.md,
-  background: color.card,
+  gap: "0.2rem",
   textAlign: "center",
-  "& > span": { fontSize: "2rem" },
-  "& small": { fontSize: "0.8rem", lineHeight: 1.5 },
 });
 
-const pubStyle = css({ color: color.accent, fontSize: "1.1rem" });
-const secretStyle = css({ color: art.warm, fontSize: "1.1rem" });
+const partyIconStyle = css({ fontSize: "2.4rem" });
 
 const boardStyle = css({
-  marginTop: "0.6rem",
-  padding: "0.75rem",
-  minHeight: "8rem",
-  border: `1px solid ${color.border}`,
-  borderRadius: radius.md,
-  background: color.bg,
-  "& p": { margin: "0.3rem 0" },
-});
-
-const ruleStyle = css({
-  padding: "0.3rem 0.6rem",
-  borderRadius: radius.sm,
-  background: color.card,
-  fontSize: "0.85rem !important",
-  lineHeight: "1.6 !important",
-});
-
-const challengeStyle = css({ fontWeight: 700, textAlign: "center" });
-
-const bigNumberStyle = css({
-  fontFamily: "var(--font-mono)",
-  fontSize: "1.4rem",
-  padding: "0 0.3rem",
-});
-
-const rowTitleStyle = css({
-  marginTop: "0.6rem !important",
-  fontWeight: 700,
-  fontSize: "0.9rem !important",
-  color: color.muted,
-});
-
-const chainStyle = css({
+  width: "100%",
+  minHeight: "10rem",
   display: "flex",
-  flexWrap: "wrap",
-  gap: "0.3rem",
-  margin: 0,
-  padding: 0,
-  listStyle: "none",
-});
-
-const chainItemStyle = css({
-  display: "inline-flex",
-  alignItems: "baseline",
-  gap: "0.15rem",
-  margin: 0,
-  padding: "0.15rem 0.45rem",
-  borderRadius: "999px",
-  background: art.softBlue,
-  fontFamily: "var(--font-mono)",
-  fontSize: "1rem !important",
-  lineHeight: "1.6 !important",
-  animation: "pop-in 300ms ease-out both",
+  flexDirection: "column",
+  alignItems: "center",
+  gap: "0.25rem",
+  padding: "0.6rem",
+  borderRadius: radius.md,
+  background: color.card,
+  border: `1px solid ${color.border}`,
   "& small": { color: color.muted, fontSize: "0.75rem" },
 });
 
-const sendStyle = css({
-  marginTop: "0.6rem !important",
+const questionStyle = css({
+  fontFamily: "var(--font-mono)",
+  fontWeight: 800,
+  fontSize: "1.1rem",
+  letterSpacing: "0.05em",
+});
+
+const tokenStyle = css({
+  padding: "0.1rem 0.5rem",
+  borderRadius: "999px",
+  background: art.goldLight,
   fontWeight: 700,
-  animation: "pop-in 350ms ease-out",
-  "& small": { color: color.muted, fontWeight: 400 },
+  fontSize: "0.8rem",
+});
+
+const signatureStyle = css({
+  padding: "0.15rem 0.5rem",
+  borderRadius: radius.sm,
+  border: `2px solid ${color.accent}`,
+  fontFamily: "var(--font-mono)",
+  fontWeight: 800,
+  fontSize: "0.95rem",
+  animation: "pop-in 400ms ease-out",
 });
 
 const verdictStyle = css({
-  padding: "0.4rem 0.6rem",
+  padding: "0.1rem 0.5rem",
   borderRadius: radius.sm,
   fontWeight: 800,
-  fontSize: "0.95rem !important",
-  animation: "pop-in 350ms ease-out both",
+  fontSize: "0.85rem",
+  animation: "pop-in 350ms ease-out",
 });
 
 const okStyle = css({ background: art.softGreen, color: art.ok });
 const ngStyle = css({ background: art.softRed, color: art.ng });
+
+const wireStyle = css({
+  alignSelf: "center",
+  display: "flex",
+  justifyContent: "center",
+  height: "2rem",
+  borderBottom: `3px dotted ${color.border}`,
+});
+
+const packetStyle = css({ fontSize: "1.1rem", whiteSpace: "nowrap" });
+
+const toRightStyle = css({
+  animation: "travel-right 1.2s ease-in-out infinite",
+});
+const toLeftStyle = css({ animation: "travel-left 1.2s ease-in-out infinite" });
 
 const againStyle = css({ textAlign: "center" });

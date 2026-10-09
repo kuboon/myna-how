@@ -160,7 +160,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "lightpanda: /auth の計算で、本物はもどり、にせものはもどらない",
+  name: "lightpanda: /auth で、本物の電子署名は合い、にせものは合わない",
   sanitizeResources: false,
   sanitizeOps: false,
   async fn() {
@@ -170,15 +170,14 @@ Deno.test({
         timeout: 10_000,
       });
       for (let i = 0; i < 3; i++) await clickButton(page, "すすむ");
-      // 5 を 7 回かけて 33 でわったあまり = 14、14 を 3 回かけて 33 でわったあまり = 5。
       await page.waitForFunction(
-        () => document.body.textContent?.includes("5 にもどった"),
+        () => document.body.textContent?.includes("本物の電子署名"),
         { timeout: 5_000 },
       );
       await clickButton(page, "にせものカード");
       for (let i = 0; i < 3; i++) await clickButton(page, "すすむ");
       await page.waitForFunction(
-        () => document.body.textContent?.includes("ログインできない"),
+        () => document.body.textContent?.includes("❌ 合わない"),
         { timeout: 5_000 },
       );
     });

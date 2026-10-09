@@ -38,7 +38,7 @@ export default function DigitalAuthApp(_handle: Handle) {
 
       <Analogy>
         <p>
-          サイトの人にとって、カードの答えを自分で確かめるのは、とても大変。そこで、デジタル庁が<strong>
+          サイトの人にとって、カードの電子署名を自分で確かめるのは、とても大変。そこで、デジタル庁が<strong>
             「確かめ係」
           </strong>
           を引き受けてくれる。サイトは「この人、本人？」と聞くだけで、確かめ係が「うん、本人だよ。このサイト用の番号はこれ」と答えてくれるんだ。
@@ -72,7 +72,7 @@ export default function DigitalAuthApp(_handle: Handle) {
         </li>
         <li>
           <strong>むずかしい確認はデジタル庁がやる。</strong>
-          カギの答えの確認や「証明書がまだ使えるか」の確認を、自分で作らなくていい。
+          電子署名の確認や「証明書がまだ使えるか」の確認を、自分で作らなくていい。
         </li>
       </ul>
 
