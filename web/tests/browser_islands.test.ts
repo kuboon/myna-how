@@ -160,7 +160,8 @@ Deno.test({
 });
 
 Deno.test({
-  name: "lightpanda: /auth で、本物の電子署名は合い、にせものは合わない",
+  name:
+    "lightpanda: /auth で、にせものは J-LIS で、使い回しは電子署名ではじかれる",
   sanitizeResources: false,
   sanitizeOps: false,
   async fn() {
@@ -171,13 +172,25 @@ Deno.test({
       });
       for (let i = 0; i < 3; i++) await clickButton(page, "すすむ");
       await page.waitForFunction(
-        () => document.body.textContent?.includes("本物の電子署名"),
+        () => document.body.textContent?.includes("電子署名は合う"),
         { timeout: 5_000 },
       );
+      // にせものカードは電子署名のたしかめは通るが、J-LIS のたしかめで落ちる。
       await clickButton(page, "にせものカード");
-      for (let i = 0; i < 3; i++) await clickButton(page, "すすむ");
+      for (let i = 0; i < 4; i++) await clickButton(page, "すすむ");
       await page.waitForFunction(
-        () => document.body.textContent?.includes("❌ 合わない"),
+        () =>
+          document.body.textContent?.includes("電子署名は合う") &&
+          document.body.textContent?.includes("そんな電子証明書は出していない"),
+        { timeout: 5_000 },
+      );
+      // のぞき見した人が 1 回目の電子署名を盗み、2 回目に使い回しても合わない。
+      await clickButton(page, "のぞき見して使い回す");
+      for (let i = 0; i < 4; i++) await clickButton(page, "すすむ");
+      await page.waitForFunction(
+        () =>
+          document.body.textContent?.includes("これをそのまま返す") &&
+          document.body.textContent?.includes("❌ 合わない"),
         { timeout: 5_000 },
       );
     });
