@@ -18,9 +18,9 @@
 import { css, type Handle, type RemixNode } from "@remix-run/component";
 
 import { base, BASE_META_NAME } from "./base.ts";
-import { chapterHref, chapters } from "./chapters.ts";
+import { chapterHref, type ChapterKey, chapters } from "./chapters.ts";
 import { routes } from "./routes.ts";
-import { color, contentWidth, radius } from "./tokens.ts";
+import { art, color, contentWidth, font, wideWidth } from "./tokens.ts";
 
 /** What every page hands the shell. */
 export interface LayoutProps {
@@ -37,6 +37,10 @@ export interface LayoutProps {
    * it renders fine, and nothing on it moves.
    */
   script: ClientRuntime | null;
+  /** The chapter this page is, so the table of contents can mark it. */
+  current?: ChapterKey;
+  /** Lay the page out at the wider measure — the home page's grid of chapters. */
+  wide?: boolean;
   children: RemixNode;
 }
 
@@ -99,6 +103,14 @@ export function Layout(handle: Handle<LayoutProps>) {
           {/* The deploy prefix, for the browser — see `client/base.ts`. */}
           <meta name={BASE_META_NAME} content={base} />
           <link rel="stylesheet" href={`${base}/static/app.css`} />
+          {/* The two faces the design is set in; `app.css` falls back to system fonts. */}
+          <link rel="preconnect" href="https://fonts.googleapis.com" />
+          <link
+            rel="preconnect"
+            href="https://fonts.gstatic.com"
+            crossorigin="anonymous"
+          />
+          <link rel="stylesheet" href={FONTS_HREF} />
           <link
             rel="icon"
             type="image/svg+xml"
@@ -110,14 +122,21 @@ export function Layout(handle: Handle<LayoutProps>) {
         </head>
         <body>
           <header mix={headerStyle}>
-            <div mix={[bandStyle, headerInnerStyle]}>
+            <div mix={[bandStyle, wideBandStyle, headerInnerStyle]}>
               <a mix={brandStyle} href={routes.home.href()}>
-                <span aria-hidden="true" mix={brandMarkStyle}>🪪</span>
+                <span aria-hidden="true" mix={brandMarkStyle}>
+                  <span mix={brandChipStyle} />
+                </span>
                 {SITE_NAME}
               </a>
               <nav aria-label="もくじ" mix={navStyle}>
                 {chapters.map((c, i) => (
-                  <a key={c.key} href={chapterHref(c.key)} mix={navLinkStyle}>
+                  <a
+                    key={c.key}
+                    href={chapterHref(c.key)}
+                    aria-current={c.key === props.current ? "page" : undefined}
+                    mix={navLinkStyle}
+                  >
                     <span mix={navNumStyle}>{i + 1}</span>
                     {c.short}
                   </a>
@@ -125,22 +144,26 @@ export function Layout(handle: Handle<LayoutProps>) {
               </nav>
             </div>
           </header>
-          <main mix={[bandStyle, mainStyle]}>{props.children}</main>
-          <footer mix={[bandStyle, footerStyle]}>
-            <p>
-              このサイトは、マイナンバーカードのしくみを、わかりやすく説明するために作った
-              <strong>非公式</strong>
-              の解説サイトです。たとえ話を使っているので、こまかいところは本物とちがう部分があります。正しい情報は
-              {" "}
-              <a href="https://www.digital.go.jp/policies/mynumber">
-                デジタル庁
-              </a>{" "}
-              や{" "}
-              <a href="https://www.jpki.go.jp/">
-                公的個人認証サービス（J-LIS）
-              </a>{" "}
-              のページを見てね。
-            </p>
+          <main mix={[bandStyle, props.wide ? wideBandStyle : null, mainStyle]}>
+            {props.children}
+          </main>
+          <footer mix={footerStyle}>
+            <div mix={[bandStyle, wideBandStyle]}>
+              <p>
+                このサイトは、マイナンバーカードのしくみを、わかりやすく説明するために作った
+                <strong>非公式</strong>
+                の解説サイトです。たとえ話を使っているので、こまかいところは本物とちがう部分があります。正しい情報は
+                {" "}
+                <a href="https://www.digital.go.jp/policies/mynumber">
+                  デジタル庁
+                </a>{" "}
+                や{" "}
+                <a href="https://www.jpki.go.jp/">
+                  公的個人認証サービス（J-LIS）
+                </a>{" "}
+                のページを見てね。
+              </p>
+            </div>
           </footer>
           {props.script
             ? <script type="module" src={props.script.src}></script>
@@ -150,6 +173,10 @@ export function Layout(handle: Handle<LayoutProps>) {
     );
   };
 }
+
+/** M PLUS Rounded 1c for headings, Zen Kaku Gothic New for the text. */
+const FONTS_HREF =
+  "https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@800&family=Zen+Kaku+Gothic+New:wght@400;700&display=swap";
 
 // --- styles -----------------------------------------------------------------
 
@@ -161,29 +188,52 @@ const bandStyle = css({
   paddingInline: "1rem",
 });
 
+/** The header, the footer and the home page run wider than a chapter's column of text. */
+const wideBandStyle = css({ maxWidth: wideWidth });
+
 const headerStyle = css({
-  background: color.card,
+  background: color.surface,
   borderBottom: `1px solid ${color.border}`,
 });
 
 const headerInnerStyle = css({
   display: "flex",
-  flexDirection: "column",
-  gap: "0.6rem",
-  paddingBlock: "0.9rem",
+  flexWrap: "wrap",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "0.75rem",
+  paddingBlock: "1rem",
 });
 
 const brandStyle = css({
   display: "inline-flex",
   alignItems: "center",
-  gap: "0.5rem",
+  gap: "0.6rem",
+  fontFamily: font.round,
   fontWeight: 800,
   fontSize: "1.25rem",
   textDecoration: "none",
   color: color.fg,
+  "&:hover": { color: color.accent },
 });
 
-const brandMarkStyle = css({ fontSize: "1.5rem" });
+/** A tiny My Number Card: blue, with the gold chip. */
+const brandMarkStyle = css({
+  display: "inline-flex",
+  alignItems: "center",
+  width: "2.25rem",
+  height: "1.6rem",
+  paddingLeft: "0.3rem",
+  borderRadius: "0.4rem",
+  background: color.accent,
+});
+
+const brandChipStyle = css({
+  width: "0.65rem",
+  height: "0.5rem",
+  borderRadius: "0.15rem",
+  background: art.goldLight,
+});
 
 const navStyle = css({
   display: "flex",
@@ -195,39 +245,35 @@ const navLinkStyle = css({
   display: "inline-flex",
   alignItems: "center",
   gap: "0.35rem",
-  padding: "0.25rem 0.7rem 0.25rem 0.3rem",
+  padding: "0.45rem 0.8rem",
   borderRadius: "999px",
-  border: `1px solid ${color.border}`,
   background: color.bg,
   color: color.fg,
-  fontSize: "0.85rem",
+  fontSize: "0.875rem",
+  fontWeight: 700,
   textDecoration: "none",
-  "&:hover": { borderColor: color.accent, color: color.accent },
+  "&:hover": { color: color.accent, background: art.softBlue },
+  '&[aria-current="page"]': {
+    background: color.accent,
+    color: color.onAccent,
+  },
 });
 
 const navNumStyle = css({
-  display: "inline-grid",
-  placeItems: "center",
-  width: "1.4rem",
-  height: "1.4rem",
-  borderRadius: "999px",
-  background: color.accent,
-  color: color.onAccent,
-  fontSize: "0.75rem",
-  fontWeight: 700,
+  fontFamily: font.round,
+  fontWeight: 800,
 });
 
-const mainStyle = css({ paddingBlock: "2rem 3rem" });
+const mainStyle = css({ paddingBlock: "3rem 5rem" });
 
 const footerStyle = css({
-  paddingBlock: "1.5rem 2.5rem",
   borderTop: `1px solid ${color.border}`,
+  background: color.surface,
   color: color.muted,
-  fontSize: "0.85rem",
   "& p": {
     margin: 0,
-    padding: "0.9rem 1rem",
-    background: color.card,
-    borderRadius: radius.md,
+    paddingBlock: "1.75rem",
+    fontSize: "0.875rem",
+    lineHeight: 1.8,
   },
 });

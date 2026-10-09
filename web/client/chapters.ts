@@ -6,6 +6,7 @@
  */
 
 import { routes } from "./routes.ts";
+import type { IconName } from "./ui/icons.tsx";
 
 export interface Chapter {
   /** The route's key in `routes`. */
@@ -17,7 +18,7 @@ export interface Chapter {
   /** One line for the home page's card. */
   lead: string;
   /** A picture for the card. */
-  icon: string;
+  icon: IconName;
 }
 
 export type ChapterKey =
@@ -35,14 +36,14 @@ export const chapters: readonly Chapter[] = [
     title: "IC チップには何ができる？",
     lead:
       "金色の IC チップは、メモ帳じゃなくて小さなコンピューター。できること・できないことを見てみよう。",
-    icon: "🔍",
+    icon: "chip",
   },
   {
     key: "tamper",
     short: "こわすと守る",
     title: "むりやり開けようとすると、どうなる？",
     lead: "チップは「金庫」。こじあけようとすると、中身を守るしくみがあるよ。",
-    icon: "🛡️",
+    icon: "shield",
   },
   {
     key: "phone",
@@ -50,7 +51,7 @@ export const chapters: readonly Chapter[] = [
     title: "スマホにマイナカードが入るって、どういうこと？",
     lead:
       "カードをコピーするんじゃない。スマホの金庫に「スマホ用のカギ」を作るんだ。",
-    icon: "📱",
+    icon: "phone",
   },
   {
     key: "auth",
@@ -58,21 +59,21 @@ export const chapters: readonly Chapter[] = [
     title: "どうやって「本人だ」とわかるの？",
     lead:
       "毎回ちがう問題に、ひみつのカギで電子署名をつけてもらって、本物かどうかたしかめるよ。",
-    icon: "🔑",
+    icon: "key",
   },
   {
     key: "anonymous",
     short: "名前を出さない",
     title: "名前を教えずに「本物の人」だと伝えられる？",
     lead: "お店ごとにちがう番号を使えば、名前を言わなくてもログインできる。",
-    icon: "🎭",
+    icon: "userOff",
   },
   {
     key: "digitalAuthApp",
     short: "デジタル認証アプリ",
     title: "デジタル庁の「デジタル認証アプリ」",
     lead: "いろいろなサイトが、マイナカードでのログインを無料で使えるしくみ。",
-    icon: "🏛️",
+    icon: "landmark",
   },
 ];
 

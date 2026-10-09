@@ -25,6 +25,7 @@ import { clientRuntime } from "./runtime.ts";
 import { ogImage, ogPaths, serveOgImage } from "./og/mod.ts";
 import { base } from "../client/base.ts";
 import { Layout, type PageModule } from "../client/layout.tsx";
+import type { ChapterKey } from "../client/chapters.ts";
 import { routes } from "../client/routes.ts";
 
 import * as Home from "../client/pages/index.tsx";
@@ -47,8 +48,12 @@ export const fileServer: FileServerBehavior = githubPages();
  * The route comes in alongside the module because the page's own path is what its social card is
  * registered under — the card is drawn from the same `title` and `description` the `<head>` gets.
  */
-function pageAction(route: { href(): string }, page: PageModule) {
-  const image = ogImage(route.href(), page);
+function pageAction(
+  route: { href(): string },
+  page: PageModule,
+  chapter?: ChapterKey,
+) {
+  const image = ogImage(route.href(), { ...page, chapter });
   const Page = page.default;
 
   return (context: AppContext): Response =>
@@ -58,6 +63,8 @@ function pageAction(route: { href(): string }, page: PageModule) {
         description={page.description}
         image={image}
         script={page.hydrate ? clientRuntime : null}
+        current={chapter}
+        wide={chapter === undefined}
       >
         <Page />
       </Layout>,
@@ -86,12 +93,16 @@ declare module "@remix-run/fetch-router" {
 const pages = createController(routes, {
   actions: {
     home: pageAction(routes.home, Home),
-    inside: pageAction(routes.inside, Inside),
-    tamper: pageAction(routes.tamper, Tamper),
-    phone: pageAction(routes.phone, Phone),
-    auth: pageAction(routes.auth, Auth),
-    anonymous: pageAction(routes.anonymous, Anonymous),
-    digitalAuthApp: pageAction(routes.digitalAuthApp, DigitalAuthApp),
+    inside: pageAction(routes.inside, Inside, "inside"),
+    tamper: pageAction(routes.tamper, Tamper, "tamper"),
+    phone: pageAction(routes.phone, Phone, "phone"),
+    auth: pageAction(routes.auth, Auth, "auth"),
+    anonymous: pageAction(routes.anonymous, Anonymous, "anonymous"),
+    digitalAuthApp: pageAction(
+      routes.digitalAuthApp,
+      DigitalAuthApp,
+      "digitalAuthApp",
+    ),
   },
 });
 

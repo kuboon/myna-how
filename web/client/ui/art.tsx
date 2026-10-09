@@ -8,6 +8,7 @@
 import type { Handle } from "@remix-run/component";
 
 import { art } from "../tokens.ts";
+import { Icon, type IconName } from "./icons.tsx";
 
 /**
  * The front of a My Number Card, simplified: a photo, lines of text and the gold chip.
@@ -30,19 +31,20 @@ export function CardFront(
         width="336"
         height="210"
         rx="16"
-        fill="#f4f8ff"
-        stroke="#9db8e8"
+        fill="#ffffff"
+        stroke="#c9d6ee"
         stroke-width="3"
       />
-      <rect x="2" y="2" width="336" height="34" rx="16" fill="#2f6fde" />
-      <rect x="2" y="20" width="336" height="16" fill="#2f6fde" />
+      <rect x="2" y="2" width="336" height="34" rx="16" fill="#1f5bd8" />
+      <rect x="2" y="20" width="336" height="16" fill="#1f5bd8" />
+      <rect x="2" y="34" width="336" height="4" fill="#163f99" />
       <text x="20" y="25" fill="#fff" font-size="15" font-weight="700">
         個人番号カード
       </text>
       {/* name / address lines */}
-      <rect x="20" y="54" width="150" height="10" rx="5" fill="#c7d4ea" />
-      <rect x="20" y="74" width="190" height="10" rx="5" fill="#c7d4ea" />
-      <rect x="20" y="94" width="120" height="10" rx="5" fill="#c7d4ea" />
+      <rect x="20" y="54" width="150" height="10" rx="5" fill="#d9e1ec" />
+      <rect x="20" y="74" width="190" height="10" rx="5" fill="#d9e1ec" />
+      <rect x="20" y="94" width="120" height="10" rx="5" fill="#d9e1ec" />
       {
         /*
         chip — placed by the outer group and floated by the inner one: a CSS `transform`
@@ -61,13 +63,13 @@ export function CardFront(
             width="58"
             height="46"
             rx="8"
-            fill="#f6d77a"
-            stroke="#d9a520"
+            fill="#f2c14e"
+            stroke="#b98516"
             stroke-width="3"
           />
           <path
             d="M0 23h58M29 0v46M14 0v12M44 0v12M14 46V34M44 46V34"
-            stroke="#d9a520"
+            stroke="#b98516"
             stroke-width="2.5"
             fill="none"
           />
@@ -80,20 +82,20 @@ export function CardFront(
         width="76"
         height="96"
         rx="8"
-        fill="#dce6f7"
-        stroke="#9db8e8"
+        fill="#e6edf8"
+        stroke="#c9d6ee"
         stroke-width="2"
       />
-      <circle cx="282" cy="86" r="18" fill="#9db8e8" />
-      <path d="M252 144c4-20 18-30 30-30s26 10 30 30z" fill="#9db8e8" />
-      <rect x="196" y="178" width="124" height="12" rx="6" fill="#c7d4ea" />
+      <circle cx="282" cy="86" r="18" fill="#c9d6ee" />
+      <path d="M252 144c4-20 18-30 30-30s26 10 30 30z" fill="#c9d6ee" />
+      <rect x="196" y="178" width="124" height="12" rx="6" fill="#d9e1ec" />
     </svg>
   );
 }
 
-/** A smartphone outline with a screen the caller fills. */
+/** A smartphone outline with a screen the caller fills with an icon. */
 export function Phone(
-  handle: Handle<{ label: string; screen?: string; vault?: boolean }>,
+  handle: Handle<{ label: string; screen?: IconName; vault?: boolean }>,
 ) {
   return () => (
     <svg
@@ -115,14 +117,9 @@ export function Phone(
       <rect x="45" y="9" width="30" height="5" rx="2.5" fill={art.paper} />
       {handle.props.screen
         ? (
-          <text
-            x="60"
-            y="60"
-            text-anchor="middle"
-            font-size="30"
-          >
-            {handle.props.screen}
-          </text>
+          <g style={{ color: art.ink }}>
+            <Icon name={handle.props.screen} x={42} y={42} size={36} />
+          </g>
         )
         : null}
       {handle.props.vault

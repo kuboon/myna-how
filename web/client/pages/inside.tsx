@@ -13,7 +13,8 @@ import {
   Summary,
 } from "../parts.tsx";
 import { SITE_NAME } from "../layout.tsx";
-import { art, radius } from "../tokens.ts";
+import { Icon } from "../ui/icons.tsx";
+import { art, color, radius } from "../tokens.ts";
 
 export const title = `IC チップには何ができる？ — ${SITE_NAME}`;
 export const description =
@@ -59,7 +60,9 @@ export default function Inside(_handle: Handle) {
       <h2>チップに「できること」</h2>
       <ul mix={[listStyle, canStyle]}>
         <li>
-          <span aria-hidden="true">🔑</span>
+          <span>
+            <Icon name="key" size={24} />
+          </span>
           <span>
             <strong>
               カギを使う。
@@ -67,7 +70,9 @@ export default function Inside(_handle: Handle) {
           </span>
         </li>
         <li>
-          <span aria-hidden="true">🔢</span>
+          <span>
+            <Icon name="keypad" size={24} />
+          </span>
           <span>
             <strong>
               暗証番号を確かめる。
@@ -75,7 +80,9 @@ export default function Inside(_handle: Handle) {
           </span>
         </li>
         <li>
-          <span aria-hidden="true">🪪</span>
+          <span>
+            <Icon name="card" size={24} />
+          </span>
           <span>
             <strong>
               正しいかぎのときだけ見せる。
@@ -83,7 +90,9 @@ export default function Inside(_handle: Handle) {
           </span>
         </li>
         <li>
-          <span aria-hidden="true">🛡️</span>
+          <span>
+            <Icon name="shieldCheck" size={24} />
+          </span>
           <span>
             <strong>
               自分の身を守る。
@@ -95,7 +104,9 @@ export default function Inside(_handle: Handle) {
       <h2>チップに「できないこと」「しないこと」</h2>
       <ul mix={[listStyle, cannotStyle]}>
         <li>
-          <span aria-hidden="true">🔑</span>
+          <span>
+            <Icon name="key" size={24} />
+          </span>
           <span>
             <strong>
               ひみつのカギを外に出す。
@@ -103,13 +114,17 @@ export default function Inside(_handle: Handle) {
           </span>
         </li>
         <li>
-          <span aria-hidden="true">🙈</span>
+          <span>
+            <Icon name="eyeOff" size={24} />
+          </span>
           <span>
             <strong>暗証番号なしで、大事な中身を見せる。</strong>
           </span>
         </li>
         <li>
-          <span aria-hidden="true">📡</span>
+          <span>
+            <Icon name="wave" size={24} />
+          </span>
           <span>
             <strong>
               自分から電波を出す、いる場所を知らせる。
@@ -117,7 +132,9 @@ export default function Inside(_handle: Handle) {
           </span>
         </li>
         <li>
-          <span aria-hidden="true">🏥</span>
+          <span>
+            <Icon name="medical" size={24} />
+          </span>
           <span>
             <strong>
               税金や病気、お金のきろくを持つ。
@@ -202,20 +219,32 @@ export default function Inside(_handle: Handle) {
 
 const listStyle = css({
   display: "grid",
-  gap: "0.5rem",
+  gap: "0.6rem",
   padding: 0,
   listStyle: "none",
   "& li": {
     display: "flex",
     alignItems: "flex-start",
-    gap: "0.6rem",
+    gap: "0.8rem",
     margin: 0,
-    padding: "0.7rem 0.9rem",
-    borderRadius: radius.md,
+    padding: "1.1rem",
+    borderRadius: radius.lg,
+    background: color.surface,
     lineHeight: 1.8,
   },
-  "& li > span:first-child": { fontSize: "1.5rem", lineHeight: 1.3 },
+  "& li > span:first-child": {
+    flex: "none",
+    display: "grid",
+    placeItems: "center",
+    width: "2.75rem",
+    height: "2.75rem",
+    borderRadius: radius.md,
+  },
 });
 
-const canStyle = css({ "& li": { background: art.softGreen } });
-const cannotStyle = css({ "& li": { background: art.softRed } });
+const canStyle = css({
+  "& li > span:first-child": { background: art.softGreen, color: art.ok },
+});
+const cannotStyle = css({
+  "& li > span:first-child": { background: art.softRed, color: art.ng },
+});

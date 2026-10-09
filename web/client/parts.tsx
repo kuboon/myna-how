@@ -16,7 +16,8 @@ import {
   neighbours,
 } from "./chapters.ts";
 import { routes } from "./routes.ts";
-import { art, color, radius } from "./tokens.ts";
+import { art, color, font, radius } from "./tokens.ts";
+import { Icon, type IconName } from "./ui/icons.tsx";
 
 /** The chapter's number, its question and the lead line under it. */
 export function ChapterHead(
@@ -28,8 +29,8 @@ export function ChapterHead(
     return (
       <header mix={chapterHeadStyle}>
         <p mix={eyebrowStyle}>
-          <span aria-hidden="true">{chapter.icon}</span> だい
-          {chapterNumber(key)}しょう
+          <span mix={badgeStyle} aria-hidden="true">{chapterNumber(key)}</span>
+          だい{chapterNumber(key)}しょう
         </p>
         <h1>{chapter.title}</h1>
         {handle.props.children
@@ -44,10 +45,13 @@ export function ChapterHead(
 export function Analogy(handle: Handle<{ children: RemixNode }>) {
   return () => (
     <aside mix={[boxStyle, analogyStyle]}>
-      <p mix={boxLabelStyle}>
-        <span aria-hidden="true">💡</span> たとえるなら
-      </p>
-      {handle.props.children}
+      <span mix={[boxMarkStyle, analogyMarkStyle]} aria-hidden="true">
+        <Icon name="bulb" size="1.25rem" />
+      </span>
+      <div>
+        <p mix={boxLabelStyle}>たとえるなら</p>
+        {handle.props.children}
+      </div>
     </aside>
   );
 }
@@ -56,10 +60,11 @@ export function Analogy(handle: Handle<{ children: RemixNode }>) {
 export function Summary(handle: Handle<{ children: RemixNode }>) {
   return () => (
     <aside mix={[boxStyle, summaryStyle]}>
-      <p mix={boxLabelStyle}>
-        <span aria-hidden="true">📝</span> ひとことでいうと
-      </p>
-      {handle.props.children}
+      <span mix={[boxMarkStyle, summaryMarkStyle]} aria-hidden="true">！</span>
+      <div>
+        <p mix={boxLabelStyle}>ひとことでいうと</p>
+        {handle.props.children}
+      </div>
     </aside>
   );
 }
@@ -81,10 +86,35 @@ export function Stage(
   return () => (
     <section mix={stageStyle} aria-label={handle.props.label}>
       <p mix={stageLabelStyle}>
-        <span aria-hidden="true">▶</span> {handle.props.label}
+        <Icon name="play" size="1.1rem" /> {handle.props.label}
       </p>
       {handle.props.children}
     </section>
+  );
+}
+
+/** One of the things a chapter's picture is about, for {@link Cast}. */
+export interface CastMember {
+  icon: IconName;
+  name: string;
+  /** One short line: what it is, or what it does. */
+  note: string;
+}
+
+/** "登場するもの": the cast of a chapter's picture, as a row of small tiles. */
+export function Cast(handle: Handle<{ items: CastMember[] }>) {
+  return () => (
+    <ul mix={castStyle}>
+      {handle.props.items.map((m) => (
+        <li key={m.name} mix={castItemStyle}>
+          <span mix={castIconStyle}>
+            <Icon name={m.icon} size="1.6rem" />
+          </span>
+          <strong>{m.name}</strong>
+          <span>{m.note}</span>
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -119,26 +149,26 @@ export function ChapterNav(handle: Handle<{ chapter: ChapterKey }>) {
         {prev
           ? (
             <a href={chapterHref(prev.key)} mix={[pagerStyle, prevStyle]}>
-              <small>← まえ</small>
+              <small>まえ</small>
               <span>{prev.title}</span>
             </a>
           )
           : (
             <a href={routes.home.href()} mix={[pagerStyle, prevStyle]}>
-              <small>← もどる</small>
+              <small>もどる</small>
               <span>はじめのページ</span>
             </a>
           )}
         {next
           ? (
             <a href={chapterHref(next.key)} mix={[pagerStyle, nextStyle]}>
-              <small>つぎ →</small>
+              <small>つぎ</small>
               <span>{next.title}</span>
             </a>
           )
           : (
             <a href={routes.home.href()} mix={[pagerStyle, nextStyle]}>
-              <small>おしまい →</small>
+              <small>おしまい</small>
               <span>はじめのページへ</span>
             </a>
           )}
@@ -149,56 +179,91 @@ export function ChapterNav(handle: Handle<{ chapter: ChapterKey }>) {
 
 // --- styles -----------------------------------------------------------------
 
-const chapterHeadStyle = css({ marginBottom: "1.5rem" });
+const chapterHeadStyle = css({
+  marginBottom: "2rem",
+  "& h1": { marginBottom: "0.75rem" },
+});
 
 const eyebrowStyle = css({
-  display: "inline-block",
-  margin: "0 0 0.5rem",
-  padding: "0.15rem 0.8rem",
+  display: "flex",
+  alignItems: "center",
+  gap: "0.75rem",
+  margin: "0 0 1.25rem",
+  fontFamily: font.round,
+  fontWeight: 800,
+  color: color.accent,
+});
+
+/** The chapter's number in a blue circle. */
+const badgeStyle = css({
+  display: "inline-grid",
+  placeItems: "center",
+  width: "3.25rem",
+  height: "3.25rem",
   borderRadius: "999px",
   background: color.accent,
   color: color.onAccent,
-  fontWeight: 700,
-  fontSize: "0.9rem",
+  fontSize: "1.6rem",
 });
 
 const leadStyle = css({
-  fontSize: "1.1rem",
   color: color.muted,
-  "& p": { marginBlock: "0.5rem" },
+  "& p": { marginBlock: "0.5rem", fontSize: "1.15rem" },
 });
 
 const boxStyle = css({
-  marginBlock: "1.75rem",
-  padding: "1rem 1.25rem",
+  display: "flex",
+  alignItems: "flex-start",
+  gap: "0.9rem",
+  marginBlock: "2rem",
+  padding: "1.25rem 1.5rem",
   borderRadius: radius.lg,
-  "& > :last-child": { marginBottom: 0 },
+  "& > div > :last-child": { marginBottom: 0 },
+  "& > div > p:not(:first-child)": { marginTop: "0.25rem" },
+});
+
+/** The little square at the start of a box: what kind of box it is. */
+const boxMarkStyle = css({
+  flex: "none",
+  display: "grid",
+  placeItems: "center",
+  width: "2.25rem",
+  height: "2.25rem",
+  borderRadius: "0.6rem",
+  fontFamily: font.round,
+  fontWeight: 800,
 });
 
 const boxLabelStyle = css({
-  margin: "0 0 0.4rem",
+  margin: "0.2rem 0 0.25rem",
+  fontFamily: font.round,
   fontWeight: 800,
-  fontSize: "0.95rem",
+  fontSize: "1.05rem",
 });
 
-const analogyStyle = css({
-  background: color.card,
-  border: `2px dashed ${art.warm}`,
+const analogyStyle = css({ background: color.surface });
+
+const analogyMarkStyle = css({
+  background: art.softBlue,
+  color: color.accent,
 });
 
-const summaryStyle = css({
-  background: art.softGreen,
-  borderInlineStart: `6px solid ${art.ok}`,
-  "& p": { fontWeight: 600 },
+const summaryStyle = css({ background: art.goldSoft });
+
+const summaryMarkStyle = css({
+  background: art.goldLight,
+  color: art.ink,
 });
 
 const noteStyle = css({
-  marginBlock: "1.75rem",
-  padding: "0.75rem 1rem",
+  marginBlock: "2rem",
+  padding: "1rem 1.25rem",
   border: `1px solid ${color.border}`,
   borderRadius: radius.md,
+  background: color.surface,
   fontSize: "0.95rem",
   "& summary": { cursor: "pointer", fontWeight: 700, color: color.muted },
+  "& summary:hover": { color: color.accent },
 });
 
 const noteBodyStyle = css({
@@ -207,31 +272,62 @@ const noteBodyStyle = css({
 });
 
 const stageStyle = css({
-  marginBlock: "2rem",
-  padding: "1rem",
-  border: `2px solid ${color.accent}`,
-  borderRadius: radius.lg,
-  background: color.bg,
-  boxShadow: `0 6px 0 ${art.softBlue}`,
+  marginBlock: "2.25rem",
+  padding: "1.5rem",
+  border: `3px solid ${color.accent}`,
+  borderRadius: "1.5rem",
+  background: color.surface,
+  "@media (max-width: 560px)": { padding: "1rem" },
 });
 
 const stageLabelStyle = css({
-  margin: "0 0 0.75rem",
+  display: "flex",
+  alignItems: "center",
+  gap: "0.6rem",
+  margin: "0 0 1rem",
+  fontFamily: font.round,
   fontWeight: 800,
   color: color.accent,
-  fontSize: "0.95rem",
+  fontSize: "1rem",
 });
+
+const castStyle = css({
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(min(14rem, 100%), 1fr))",
+  gap: "0.75rem",
+  margin: "1rem 0 0",
+  padding: 0,
+  listStyle: "none",
+});
+
+const castItemStyle = css({
+  display: "flex",
+  flexDirection: "column",
+  gap: "0.4rem",
+  margin: 0,
+  padding: "1.1rem",
+  borderRadius: "1.1rem",
+  background: color.surface,
+  "& strong": { fontSize: "1rem" },
+  "& > span:last-child": {
+    color: color.muted,
+    fontSize: "0.875rem",
+    lineHeight: 1.7,
+  },
+});
+
+const castIconStyle = css({ color: color.accent, display: "flex" });
 
 const sourcesStyle = css({
   marginTop: "3rem",
-  "& h2": { fontSize: "1.05rem", color: color.muted },
+  "& h2": { fontSize: "1.1rem", color: color.muted },
   "& ul": { paddingLeft: "1.2rem" },
   "& li": { fontSize: "0.9rem", lineHeight: 1.7 },
 });
 
 const chapterNavStyle = css({
   display: "grid",
-  gridTemplateColumns: "1fr 1fr",
+  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
   gap: "0.75rem",
   marginTop: "2.5rem",
 });
@@ -239,16 +335,16 @@ const chapterNavStyle = css({
 const pagerStyle = css({
   display: "flex",
   flexDirection: "column",
-  gap: "0.2rem",
-  padding: "0.8rem 1rem",
-  border: `1px solid ${color.border}`,
-  borderRadius: radius.lg,
-  background: color.card,
+  gap: "0.25rem",
+  padding: "1rem 1.15rem",
+  border: "2px solid transparent",
+  borderRadius: "1.1rem",
+  background: color.surface,
   color: color.fg,
   textDecoration: "none",
-  "& small": { color: color.accent, fontWeight: 700 },
-  "& span": { fontSize: "0.95rem", lineHeight: 1.5 },
-  "&:hover": { borderColor: color.accent },
+  "& small": { color: color.accent, fontWeight: 700, fontSize: "0.8rem" },
+  "& span": { fontSize: "0.95rem", lineHeight: 1.6 },
+  "&:hover": { borderColor: color.accent, color: color.fg },
 });
 
 const prevStyle = css({ textAlign: "left" });

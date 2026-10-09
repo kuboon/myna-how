@@ -37,64 +37,82 @@
     color-scheme: light dark;
 
     /*
-     * A Japanese stack. The first two names cover Latin text, the next three cover 日本語, and the
-     * order is what decides which script each font draws: a browser walks the list per character,
-     * so Helvetica Neue and Arial — neither of which has kana — hand the Japanese on to Hiragino
-     * or Noto without ever being asked to fake it.
+     * A Japanese stack. Zen Kaku Gothic New (from Google Fonts, linked in `layout.tsx`) draws both
+     * scripts; the system Japanese fonts after it stand in while it loads or if it cannot, and the
+     * order is what decides which script each fallback draws — a browser walks the list per
+     * character, so a Latin-only font never gets asked to fake kana.
      */
     --font-sans:
-      "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans",
+      "Zen Kaku Gothic New", "Hiragino Kaku Gothic ProN", "Hiragino Sans",
+      "Noto Sans JP", sans-serif;
+    /* Headings, buttons and numbers: round and heavy, so a child reads them as friendly. */
+    --font-round:
+      "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", "Zen Kaku Gothic New",
       "Noto Sans JP", sans-serif;
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
-    --radius-sm: 0.3rem;
-    --radius-md: 0.5rem;
-    --radius-lg: 0.75rem;
+    --radius-sm: 0.5rem;
+    --radius-md: 1rem;
+    --radius-lg: 1.375rem;
 
     /* The measure every band of the shell lines up to. */
-    --content-width: 46rem;
+    --content-width: 47.5rem;
+    /* The wider measure of the home page's bands. */
+    --wide-width: 70rem;
 
-    --bg: #fffdf8;
-    --fg: #1f2937;
-    --muted: #5b6474;
-    --accent: #2f6fde;
+    /* The ground the page sits on; white surfaces sit on top of it. */
+    --bg: #f3f6fb;
+    --surface: #ffffff;
+    --fg: #142033;
+    --muted: #4a5568;
+    /* Card blue. */
+    --accent: #1f5bd8;
+    --accent-strong: #163f99;
     /* Text on an --accent background — dark in dark mode, where the accent is light. */
     --on-accent: #ffffff;
-    --border: #e6e1d6;
-    /* A raised-but-quiet surface: cards, code, callouts. */
-    --card: #fff7e8;
+    --border: #d9e1ec;
+    /* The outline of a control: a button, a chooser pill, a step dot. */
+    --line: #c9d6ee;
+    /* A quiet panel inside a white surface: captions, the parties of a diagram. */
+    --card: #f3f6fb;
 
-    /* The illustrations' palette. */
-    --warm: #f08a4b;
-    --gold: #d9a520;
-    --gold-light: #f6d77a;
-    --ok: #18a058;
-    --ng: #e0434a;
-    --ink: #1f2937;
+    /* The illustrations' palette. The chip is gold: --gold-light fills it, --gold outlines it. */
+    --warm: #e9b13b;
+    --gold: #b98516;
+    --gold-light: #f2c14e;
+    /* The "ひとことでいうと" panel. */
+    --gold-soft: #fff6de;
+    --ok: #0f7a5c;
+    --ng: #c2343b;
+    --ink: #142033;
     --paper: #ffffff;
-    --soft-blue: #e7f0ff;
-    --soft-green: #e4f7ec;
-    --soft-red: #fde8e8;
+    --soft-blue: #e6edf8;
+    --soft-green: #e8f4ef;
+    --soft-red: #fbeaea;
   }
 
   @media (prefers-color-scheme: dark) {
     :root {
-      --bg: #12151d;
-      --fg: #e9ecf2;
-      --muted: #a3abb9;
-      --accent: #7aa8ff;
-      --on-accent: #10131a;
-      --border: #2b3140;
-      --card: #1b2030;
-      --warm: #ff9f66;
-      --gold: #e8b93a;
+      --bg: #0f1522;
+      --surface: #182032;
+      --fg: #e8edf5;
+      --muted: #a6b1c4;
+      --accent: #7ea6ff;
+      --accent-strong: #a9c3ff;
+      --on-accent: #0f1522;
+      --border: #2a3446;
+      --line: #3a4760;
+      --card: #202a3d;
+      --warm: #f2c14e;
+      --gold: #e9b13b;
       --gold-light: #6b5520;
-      --ok: #3ccf7e;
-      --ng: #ff6b70;
-      --ink: #e9ecf2;
-      --paper: #232a3b;
+      --gold-soft: #2e2716;
+      --ok: #4fd1a5;
+      --ng: #ff7a80;
+      --ink: #e8edf5;
+      --paper: #182032;
       --soft-blue: #1d2b48;
-      --soft-green: #17352a;
+      --soft-green: #15332a;
       --soft-red: #3d1f24;
     }
   }
@@ -130,16 +148,27 @@
     color: var(--accent);
   }
 
+  a:hover {
+    color: var(--accent-strong);
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-round);
+    font-weight: 800;
+  }
+
   h1 {
-    font-size: 1.9rem;
+    font-size: clamp(1.9rem, 4.5vw, 2.6rem);
     line-height: 1.3;
     margin-top: 0;
   }
 
   h2 {
-    font-size: 1.35rem;
-    line-height: 1.35;
-    margin-top: 2.5rem;
+    font-size: 1.5rem;
+    line-height: 1.4;
+    margin-top: 2.75rem;
   }
 
   p,
@@ -159,7 +188,7 @@
   code {
     font-family: var(--font-mono);
     font-size: 0.9em;
-    background: var(--card);
+    background: var(--soft-blue);
     padding: 0.1rem 0.35rem;
     border-radius: var(--radius-sm);
   }

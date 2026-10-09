@@ -8,14 +8,25 @@ Nothing here is served to a browser. These files exist because Skia needs real
 font data: there is no system font stack to fall back on and no CSS to resolve
 one.
 
-| File                     | Covers                               | Licence                                                        |
-| ------------------------ | ------------------------------------ | -------------------------------------------------------------- |
-| `Inter-Regular.ttf`      | Latin, and most of the rest          | [`LICENSE-Inter.txt`](./LICENSE-Inter.txt) (SIL OFL)           |
-| `Inter-Bold.ttf`         | the same, bold                       | as above                                                       |
-| `NotoSansJP-Regular.ttf` | Japanese — kana and JIS X 0208 kanji | [`LICENSE-NotoSansJP.txt`](./LICENSE-NotoSansJP.txt) (SIL OFL) |
+| File                           | Covers                                    | Licence                                                                |
+| ------------------------------ | ----------------------------------------- | ---------------------------------------------------------------------- |
+| `Inter-Regular.ttf`            | Latin, and most of the rest               | [`LICENSE-Inter.txt`](./LICENSE-Inter.txt) (SIL OFL)                   |
+| `Inter-Bold.ttf`               | the same, bold                            | as above                                                               |
+| `NotoSansJP-Regular.ttf`       | Japanese — kana and JIS X 0208 kanji      | [`LICENSE-NotoSansJP.txt`](./LICENSE-NotoSansJP.txt) (SIL OFL)         |
+| `MPLUSRounded1c-ExtraBold.ttf` | headings — ASCII, kana, JIS level 1 kanji | [`LICENSE-MPLUSRounded1c.txt`](./LICENSE-MPLUSRounded1c.txt) (SIL OFL) |
 
 Inter sorts first, so Latin is Inter's even though Noto Sans JP has Latin of its
-own.
+own. `card.ts` asks for Rounded M+ (the site's heading face, M PLUS Rounded 1c)
+by name for headings, with the others behind it, and leaves it out of the plain
+text's list.
+
+## The heading face
+
+`MPLUSRounded1c-ExtraBold.ttf` is M PLUS Rounded 1c ExtraBold (`v22` on
+`fonts.gstatic.com`) cut down to ASCII, kana, symbols and the 2,965 level 1
+kanji of JIS X 0208 — 1.7MB against 3.6MB. A level 2 kanji in a heading falls
+back to Noto Sans JP. Regenerate it like the Noto subset below, with the
+`range(0xA1, 0xD0)` rows of EUC-JP plus `range(0x20, 0x7F)`.
 
 ## Why Japanese has one weight and Latin has two
 

@@ -14,13 +14,14 @@ import {
   dangerStyle,
   primaryStyle,
 } from "../ui/controls.tsx";
-import { art, color, radius } from "../tokens.ts";
+import { Icon, type IconName } from "../ui/icons.tsx";
+import { art, color, font, radius } from "../tokens.ts";
 
 type Mood = "calm" | "alert" | "locked" | "refuse" | "open";
 
 interface Attack {
   id: string;
-  icon: string;
+  icon: IconName;
   label: string;
   mood: Mood;
   reaction: string;
@@ -29,7 +30,7 @@ interface Attack {
 const attacks: Attack[] = [
   {
     id: "pry",
-    icon: "🔨",
+    icon: "hammer",
     label: "チップをけずって、中を直接のぞく",
     mood: "alert",
     reaction:
@@ -37,7 +38,7 @@ const attacks: Attack[] = [
   },
   {
     id: "power",
-    icon: "⚡",
+    icon: "bolt",
     label: "電気や光で、計算をくるわせる",
     mood: "alert",
     reaction:
@@ -45,7 +46,7 @@ const attacks: Attack[] = [
   },
   {
     id: "copy",
-    icon: "📤",
+    icon: "upload",
     label: "「ひみつのカギを外に出して」とたのむ",
     mood: "refuse",
     reaction:
@@ -121,14 +122,34 @@ export const TamperLab = clientEntry(
           </div>
           <div mix={statusStyle} data-mood={mood}>
             {mood === "calm"
-              ? "😊 へいき"
+              ? (
+                <>
+                  <Icon name="smile" /> へいき
+                </>
+              )
               : mood === "alert"
-              ? "🚨 けいかい！"
+              ? (
+                <>
+                  <Icon name="alert" /> けいかい！
+                </>
+              )
               : mood === "refuse"
-              ? "🙅 おことわり"
+              ? (
+                <>
+                  <Icon name="ban" /> おことわり
+                </>
+              )
               : mood === "locked"
-              ? "🔒 ロック中"
-              : "😲 当たった"}
+              ? (
+                <>
+                  <Icon name="lock" /> ロック中
+                </>
+              )
+              : (
+                <>
+                  <Icon name="alert" /> 当たった
+                </>
+              )}
           </div>
         </div>
 
@@ -144,7 +165,7 @@ export const TamperLab = clientEntry(
               mix={[buttonStyle, dangerStyle, on("click", () => attack(a))]}
               disabled={mood === "locked"}
             >
-              <span aria-hidden="true">{a.icon}</span> {a.label}
+              <Icon name={a.icon} /> {a.label}
             </button>
           ))}
           <button
@@ -159,7 +180,7 @@ export const TamperLab = clientEntry(
             ]}
             disabled={mood === "locked"}
           >
-            <span aria-hidden="true">🔢</span> 暗証番号を当てずっぽうで入れる
+            <Icon name="keypad" /> 暗証番号を当てずっぽうで入れる
           </button>
         </div>
 
@@ -200,7 +221,7 @@ export const TamperLab = clientEntry(
                 type="button"
                 mix={[buttonStyle, primaryStyle, on("click", reset)]}
               >
-                ↺ チップをもとにもどす
+                <Icon name="restart" /> チップをもとにもどす
               </button>
             </p>
           )
@@ -299,22 +320,27 @@ const refuseStyle = css({ animation: "shake 300ms ease-in-out 1" });
 const lockedStyle = css({ filter: "grayscale(0.6)" });
 
 const statusStyle = css({
-  padding: "0.2rem 0.9rem",
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "0.4rem",
+  padding: "0.3rem 1rem",
   borderRadius: "999px",
+  fontFamily: font.round,
   fontWeight: 800,
   background: art.softGreen,
+  color: art.ok,
   '&[data-mood="alert"], &[data-mood="locked"]': {
     background: art.softRed,
     color: art.ng,
   },
-  '&[data-mood="refuse"]': { background: art.softBlue },
+  '&[data-mood="refuse"]': { background: art.softBlue, color: color.accent },
 });
 
 const buttonsStyle = css({
   display: "grid",
   gridTemplateColumns: "repeat(auto-fill, minmax(15rem, 1fr))",
   gap: "0.5rem",
-  "& button": { textAlign: "left" },
+  "& button": { justifyContent: "flex-start", textAlign: "left" },
 });
 
 const pinPadStyle = css({
@@ -351,6 +377,10 @@ const keysStyle = css({
   "& button:last-child": { gridColumn: "2" },
 });
 
-const keyStyle = css({ fontSize: "1.2rem", padding: "0.4rem" });
+const keyStyle = css({
+  fontFamily: font.mono,
+  fontSize: "1.2rem",
+  padding: "0.4rem",
+});
 
 const resetRowStyle = css({ textAlign: "center", marginTop: "1rem" });

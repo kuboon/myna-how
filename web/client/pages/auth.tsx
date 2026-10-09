@@ -2,6 +2,7 @@ import type { Handle } from "@remix-run/component";
 
 import { AuthFlow } from "../islands/auth_flow.tsx";
 import {
+  Cast,
   ChapterHead,
   ChapterNav,
   GrownUpNote,
@@ -27,28 +28,33 @@ export default function Auth(_handle: Handle) {
       </ChapterHead>
 
       <h2>登場するもの</h2>
-      <ul>
-        <li>
-          <strong>
-            ひみつのカギ（秘密鍵）
-          </strong>……チップの中にしまってある。外には一度も出ない。
-        </li>
-        <li>
-          <strong>
-            公開のカギ（公開鍵）
-          </strong>……ひみつのカギとペアで作られる。みんなに見せてもだいじょうぶ。
-        </li>
-        <li>
-          <strong>
-            電子署名
-          </strong>……ひみつのカギを使ってつける「しるし」。そのカードのひみつのカギでしか作れない。公開のカギを使うと、本物かどうかたしかめられる。
-        </li>
-        <li>
-          <strong>
-            電子証明書
-          </strong>……「この公開のカギは、たしかにこのカードのものです」と、国（J-LIS）が証明したもの。
-        </li>
-      </ul>
+      <Cast
+        items={[
+          {
+            icon: "key",
+            name: "ひみつのカギ（秘密鍵）",
+            note: "チップの中にしまってある。外には一度も出ない。",
+          },
+          {
+            icon: "publicKey",
+            name: "公開のカギ（公開鍵）",
+            note:
+              "ひみつのカギとペアで作られる。みんなに見せてもだいじょうぶ。",
+          },
+          {
+            icon: "sign",
+            name: "電子署名",
+            note:
+              "ひみつのカギでつける「しるし」。公開のカギで、本物かどうかたしかめられる。",
+          },
+          {
+            icon: "certificate",
+            name: "電子証明書",
+            note:
+              "「この公開のカギは、このカードのもの」と国（J-LIS）が証明したもの。",
+          },
+        ]}
+      />
 
       <Stage label="うごかしてみよう：ログインのしくみ">
         <AuthFlow />

@@ -8,15 +8,19 @@
 import { clientEntry, css, type Handle } from "@remix-run/component";
 
 import { captionStyle, emphasize, StepBar } from "../ui/controls.tsx";
-import { art, color, radius } from "../tokens.ts";
+import { Icon, type IconName } from "../ui/icons.tsx";
+import { art, color, font, radius } from "../tokens.ts";
 
 type Actor = "site" | "app" | "agency";
+
+/** What one actor's screen shows: a row of icons, each with words beside it or alone. */
+type Screen = { icon: IconName; text?: string }[];
 
 interface Step {
   active: Actor[];
   /** Which way the message goes, if one is on the move. */
   arrow: { from: Actor; to: Actor; label: string } | null;
-  screens: Record<Actor, string>;
+  screens: Record<Actor, Screen>;
   caption: string;
 }
 
@@ -25,9 +29,9 @@ const steps: Step[] = [
     active: ["site"],
     arrow: null,
     screens: {
-      site: "🔘 マイナンバーカードでログイン",
-      app: "",
-      agency: "",
+      site: [{ icon: "card", text: "マイナンバーカードでログイン" }],
+      app: [],
+      agency: [],
     },
     caption:
       "お店や役所のサイトに、<「マイナンバーカードでログイン」ボタン>がある。おしてみよう。",
@@ -36,9 +40,9 @@ const steps: Step[] = [
     active: ["site", "app"],
     arrow: { from: "site", to: "app", label: "ログインしたいです" },
     screens: {
-      site: "⏳ アプリで確かめてね",
-      app: "📋 このサイトにログインしますか？",
-      agency: "",
+      site: [{ icon: "hourglass", text: "アプリで確かめてね" }],
+      app: [{ icon: "clipboard", text: "このサイトにログインしますか？" }],
+      agency: [],
     },
     caption:
       "スマホの<デジタル認証アプリ>がひらく。どのサイトが、何を知りたがっているかが表示されるよ。名前などを教える場合は、ここで自分で決められる。",
@@ -47,9 +51,13 @@ const steps: Step[] = [
     active: ["app"],
     arrow: null,
     screens: {
-      site: "⏳",
-      app: "🔢 暗証番号 → 🪪 カードをかざす",
-      agency: "",
+      site: [{ icon: "hourglass" }],
+      app: [
+        { icon: "keypad", text: "暗証番号" },
+        { icon: "arrowRight" },
+        { icon: "card", text: "カードをかざす" },
+      ],
+      agency: [],
     },
     caption:
       "<暗証番号を入れて、カードをスマホにかざす>。チップの中で、ひみつのカギを使って電子署名がつけられるよ。",
@@ -58,9 +66,9 @@ const steps: Step[] = [
     active: ["app", "agency"],
     arrow: { from: "app", to: "agency", label: "電子署名＋証明書" },
     screens: {
-      site: "⏳",
-      app: "📡 確認中…",
-      agency: "🔎 本物？ まだ使える？",
+      site: [{ icon: "hourglass" }],
+      app: [{ icon: "wave", text: "確認中…" }],
+      agency: [{ icon: "search", text: "本物？ まだ使える？" }],
     },
     caption:
       "アプリは<デジタル庁のサーバー>に電子署名と証明書を送る。サーバーは「本物の電子署名か」「証明書はまだ使えるか（J-LIS に確認）」を調べるよ。",
@@ -69,20 +77,22 @@ const steps: Step[] = [
     active: ["agency", "site"],
     arrow: { from: "agency", to: "site", label: "OK！＋このサイト用の番号" },
     screens: {
-      site: "🎉 ログインできました",
-      app: "✅ 完了",
-      agency: "✅ OK",
+      site: [{ icon: "sparkle", text: "ログインできました" }],
+      app: [{ icon: "check", text: "完了" }],
+      agency: [{ icon: "check", text: "OK" }],
     },
     caption:
       "サイトには「本人だと確かめたよ」という返事と、<このサイト用の番号>がとどく。ログイン完了！ サイトは、むずかしい電子署名の確認を自分でしなくていいんだ。",
   },
 ];
 
-const actors: { id: Actor; icon: string; name: string }[] = [
-  { id: "site", icon: "💻", name: "お店・役所のサイト" },
-  { id: "app", icon: "📱", name: "デジタル認証アプリ" },
-  { id: "agency", icon: "🏛️", name: "デジタル庁のサーバー" },
+const actors: { id: Actor; icon: IconName; name: string }[] = [
+  { id: "site", icon: "monitor", name: "お店・役所のサイト" },
+  { id: "app", icon: "phone", name: "デジタル認証アプリ" },
+  { id: "agency", icon: "landmark", name: "デジタル庁のサーバー" },
 ];
+
+const iconOf = (id: Actor) => actors.find((a) => a.id === id)!.icon;
 
 export const AppFlow = clientEntry(
   import.meta.url,
@@ -106,13 +116,20 @@ export const AppFlow = clientEntry(
                   s.active.includes(a.id) ? activeStyle : undefined,
                 ]}
               >
-                <span aria-hidden="true" mix={iconStyle}>{a.icon}</span>
+                <span aria-hidden="true" mix={iconStyle}>
+                  <Icon name={a.icon} size="1.9rem" />
+                </span>
                 <strong mix={nameStyle}>{a.name}</strong>
                 <div mix={screenStyle}>
-                  {s.screens[a.id]
+                  {s.screens[a.id].length > 0
                     ? (
                       <span key={`${a.id}-${step}`} mix={popStyle}>
-                        {s.screens[a.id]}
+                        {s.screens[a.id].map((part, i) => (
+                          <span key={i} mix={screenPartStyle}>
+                            <Icon name={part.icon} />
+                            {part.text}
+                          </span>
+                        ))}
                       </span>
                     )
                     : null}
@@ -125,9 +142,10 @@ export const AppFlow = clientEntry(
             {s.arrow
               ? (
                 <span key={`arrow-${step}`} mix={arrowStyle}>
-                  {actors.find((a) => a.id === s.arrow!.from)!.icon} 〜
-                  {s.arrow.label}〜▶{" "}
-                  {actors.find((a) => a.id === s.arrow!.to)!.icon}
+                  <Icon name={iconOf(s.arrow.from)} />
+                  {s.arrow.label}
+                  <Icon name="arrowRight" />
+                  <Icon name={iconOf(s.arrow.to)} />
                 </span>
               )
               : <span mix={quietStyle}></span>}
@@ -157,6 +175,7 @@ const actorStyle = css({
   padding: "0.6rem 0.4rem",
   border: `2px solid ${color.border}`,
   borderRadius: radius.lg,
+  background: color.surface,
   textAlign: "center",
   opacity: 0.55,
   transition: "opacity 250ms, border-color 250ms, transform 250ms",
@@ -169,9 +188,21 @@ const activeStyle = css({
   transform: "translateY(-3px)",
 });
 
-const iconStyle = css({ fontSize: "2.2rem" });
+const iconStyle = css({
+  display: "grid",
+  placeItems: "center",
+  width: "3rem",
+  height: "3rem",
+  borderRadius: radius.md,
+  background: art.softBlue,
+  color: color.accent,
+});
 
-const nameStyle = css({ fontSize: "0.8rem", lineHeight: 1.4 });
+const nameStyle = css({
+  fontFamily: font.round,
+  fontSize: "0.8rem",
+  lineHeight: 1.4,
+});
 
 const screenStyle = css({
   width: "100%",
@@ -180,13 +211,28 @@ const screenStyle = css({
   placeItems: "center",
   padding: "0.3rem",
   borderRadius: radius.md,
-  background: color.bg,
+  background: color.surface,
+  border: `1px solid ${color.border}`,
   fontSize: "0.8rem",
   fontWeight: 700,
   lineHeight: 1.5,
 });
 
-const popStyle = css({ animation: "pop-in 350ms ease-out" });
+const popStyle = css({
+  display: "flex",
+  flexWrap: "wrap",
+  justifyContent: "center",
+  alignItems: "center",
+  gap: "0.2rem 0.4rem",
+  animation: "pop-in 350ms ease-out",
+});
+
+const screenPartStyle = css({
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "0.25rem",
+  "& svg": { color: color.accent },
+});
 
 const arrowRowStyle = css({
   display: "flex",
@@ -196,7 +242,11 @@ const arrowRowStyle = css({
 });
 
 const arrowStyle = css({
-  padding: "0.3rem 0.8rem",
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "0.4rem",
+  padding: "0.3rem 0.9rem",
+  color: art.ink,
   borderRadius: "999px",
   background: art.goldLight,
   fontWeight: 800,

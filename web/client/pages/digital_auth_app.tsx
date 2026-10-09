@@ -11,6 +11,7 @@ import {
   Summary,
 } from "../parts.tsx";
 import { SITE_NAME } from "../layout.tsx";
+import { Icon, type IconName } from "../ui/icons.tsx";
 import { art, color, radius } from "../tokens.ts";
 
 export const title = `デジタル庁の「デジタル認証アプリ」 — ${SITE_NAME}`;
@@ -19,11 +20,11 @@ export const description =
 
 export const hydrate = true;
 
-const uses = [
-  { icon: "🔐", text: "ネットのサービスにログインする" },
-  { icon: "🍺", text: "お酒を買うときなどの年れい確認" },
-  { icon: "🏟️", text: "公共しせつのネット予約" },
-  { icon: "🏦", text: "銀行やお店での本人確認" },
+const uses: { icon: IconName; text: string }[] = [
+  { icon: "lock", text: "ネットのサービスにログインする" },
+  { icon: "cup", text: "お酒を買うときなどの年れい確認" },
+  { icon: "ticket", text: "公共しせつのネット予約" },
+  { icon: "landmark", text: "銀行やお店での本人確認" },
 ];
 
 export default function DigitalAuthApp(_handle: Handle) {
@@ -53,7 +54,9 @@ export default function DigitalAuthApp(_handle: Handle) {
       <ul mix={usesStyle}>
         {uses.map((u) => (
           <li key={u.text}>
-            <span aria-hidden="true">{u.icon}</span>
+            <span>
+              <Icon name={u.icon} size={22} />
+            </span>
             {u.text}
           </li>
         ))}
@@ -164,18 +167,27 @@ const usesStyle = css({
     alignItems: "center",
     gap: "0.5rem",
     margin: 0,
-    padding: "0.6rem 0.8rem",
-    borderRadius: radius.md,
-    background: art.softBlue,
+    padding: "0.9rem 1.1rem",
+    borderRadius: radius.lg,
+    background: color.surface,
     fontWeight: 700,
   },
-  "& li span": { fontSize: "1.5rem" },
+  "& li > span": {
+    flex: "none",
+    display: "grid",
+    placeItems: "center",
+    width: "2.5rem",
+    height: "2.5rem",
+    borderRadius: radius.md,
+    background: art.softBlue,
+    color: color.accent,
+  },
 });
 
 const linkBoxStyle = css({
   marginBlock: "1.5rem",
-  padding: "0.8rem 1rem",
-  borderRadius: radius.md,
-  border: `1px solid ${color.border}`,
+  padding: "1rem 1.1rem",
+  borderRadius: radius.lg,
+  background: color.surface,
   "& p": { margin: 0 },
 });
