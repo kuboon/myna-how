@@ -62,11 +62,11 @@ function pseudonym(seed: string): string {
 function whatTheySee(mode: Mode, shop: Shop): string {
   switch (mode) {
     case "name":
-      return "まいな はなこ／○○市△△町 1-2-3／2015年4月1日生まれ";
+      return "まいな はなこ／○○市△△町1-2-3／2015年4月1日生まれ";
     case "same":
-      return `番号 ${pseudonym("card-serial")}`;
+      return `番号：${pseudonym("card-serial")}`;
     case "pairwise":
-      return `番号 ${pseudonym(`hanako@${shop.id}`)}`;
+      return `番号：${pseudonym(`hanako@${shop.id}`)}`;
   }
 }
 
@@ -119,9 +119,8 @@ export const PairwiseDemo = clientEntry(
               <Icon name="user" size="1.8rem" />
             </span>
             <span>
-              <strong>はなこさん</strong>が、3
-              つのサイトにマイナカードでログインするよ。「ログイン」をおしてみよう（同じサイトに
-              2 回目もためしてね）。
+              <strong>はなこさん</strong>
+              {"が、3つのサイトにマイナンバーカードでログインするよ。「ログイン」をおしてみよう（同じサイトに2回目もためしてね）。"}
             </span>
           </div>
 
@@ -163,8 +162,8 @@ export const PairwiseDemo = clientEntry(
                             {n === 1
                               ? "「はじめまして！」"
                               : mode === "name"
-                              ? `「まいなさん、${n} 回目だね」`
-                              : `「この番号の人、${n} 回目だね」`}
+                              ? `「まいなさん、${n}回目だね」`
+                              : `「この番号の人、${n}回目だね」`}
                           </small>
                         </div>
                       )
@@ -191,7 +190,7 @@ export const PairwiseDemo = clientEntry(
               サイトどうしで、とどいたものを見せ合ったら？
             </button>
             {seen.length < 2
-              ? <small>（2 つ以上のサイトにログインするとおせるよ）</small>
+              ? <small>（2つ以上のサイトにログインするとおせるよ）</small>
               : null}
             {compared
               ? (

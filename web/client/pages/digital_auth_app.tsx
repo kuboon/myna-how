@@ -32,21 +32,21 @@ export default function DigitalAuthApp(_handle: Handle) {
     <>
       <ChapterHead chapter="digitalAuthApp">
         <p>
-          ここまで見てきたしくみを、だれでもかんたんに使えるようにしたのが、デジタル庁の
-          <strong>デジタル認証アプリ</strong>。2024 年から使われているよ。
+          {"ここまで見てきたしくみを、だれでもかんたんに使えるようにしたのが、デジタル庁の"}
+          <strong>デジタル認証アプリ</strong>
+          {"。2024年から使われているよ。"}
         </p>
       </ChapterHead>
 
       <Analogy>
         <p>
-          サイトの人にとって、カードの電子署名を自分で確かめるのは、とても大変。そこで、デジタル庁が<strong>
-            「確かめ係」
-          </strong>
-          を引き受けてくれる。サイトは「この人、本人？」と聞くだけで、確かめ係が「うん、本人だよ。このサイト用の番号はこれ」と答えてくれるんだ。
+          {"サイトの人にとって、カードの電子署名を自分で確かめるのは、とても大変。そこで、デジタル庁が"}
+          <strong>「確かめ係」</strong>
+          {"を引き受けてくれる。サイトは「この人、本人？」と聞くだけで、確かめ係が「うん、本人だよ。このサイト用の番号はこれ」と答えてくれるんだ。"}
         </p>
       </Analogy>
 
-      <Stage label="うごかしてみよう：アプリでログイン">
+      <Stage label="動かしてみよう：アプリでログイン">
         <AppFlow />
       </Stage>
 
@@ -66,16 +66,17 @@ export default function DigitalAuthApp(_handle: Handle) {
       <ul>
         <li>
           <strong>無料で使える。</strong>
-          ログイン（認証）のしくみは、お金をはらわずに組みこめるよ。
+          {"ログイン（認証）のしくみは、お金をはらわずに組みこめるよ。"}
         </li>
         <li>
           <strong>世界共通の決まりで作られている。</strong>
-          「〇〇でログイン」ボタンでおなじみの<strong>OpenID Connect</strong>
-          という決まりにそっているので、組みこみやすいんだ。
+          {"「○○でログイン」ボタンでおなじみの"}
+          <strong>OpenID Connect</strong>
+          {"という決まりにそっているので、組みこみやすいんだ。"}
         </li>
         <li>
           <strong>むずかしい確認はデジタル庁がやる。</strong>
-          電子署名の確認や「証明書がまだ使えるか」の確認を、自分で作らなくていい。
+          {"電子署名の確認や「証明書がまだ使えるか」の確認を、自分で作らなくていい。"}
         </li>
       </ul>
 
@@ -83,44 +84,44 @@ export default function DigitalAuthApp(_handle: Handle) {
       <ul>
         <li>
           <strong>名前を教えなくてもいい。</strong>
-          サイトにとどくのは、サイトごとにちがう番号だけ（まえの章を見てね）。
+          {"サイトにとどくのは、サイトごとにちがう番号だけ（前の章を見てね）。"}
         </li>
         <li>
           <strong>教えるかどうかは自分で決める。</strong>
-          名前や住所が必要なときは、アプリに出る画面を見て、自分で OK する。
+          {"名前や住所が必要なときは、アプリに出る画面を見て、自分でOKする。"}
         </li>
         <li>
           <strong>パスワードを覚えなくていい。</strong>
-          サイトごとにパスワードを作らなくても、カードと暗証番号でログインできる。
+          {"サイトごとにパスワードを作らなくても、カードと暗証番号でログインできる。"}
         </li>
       </ul>
 
       <Summary>
         <p>
-          デジタル認証アプリは、マイナンバーカードでの本人確認を、デジタル庁が「確かめ係」になって手伝うしくみ。サイトは無料で組みこめて、使う人は名前を教えずにログインできる。
+          {"デジタル認証アプリは、マイナンバーカードでの本人確認を、デジタル庁が「確かめ係」になって手伝うしくみ。サイトは無料で組みこめて、使う人は名前を教えずにログインできる。"}
         </p>
       </Summary>
 
       <GrownUpNote>
         <ul>
           <li>
-            認証 API は OpenID Connect（OAuth 2.0
-            認可コードフロー）。PKCE（S256）必須、トークンエンドポイントのクライアント認証は
-            <code>private_key_jwt</code>（ES256）。
+            {"認証APIはOpenID Connect（OAuth 2.0認可コードフロー）。PKCE（S256）必須、トークンエンドポイントのクライアント認証は"}
+            <code>private_key_jwt</code>
+            {"（ES256）。"}
           </li>
           <li>
-            利用者識別子 <code>sub</code>{" "}
-            は pairwise（事業者ごとに異なる）。 基本 4 情報は <code>name</code>
-            {" "}
-            <code>address</code> <code>birthdate</code> <code>gender</code>{" "}
-            のスコープで要求し、利用者の同意を得て取得する。
+            {"利用者識別子"}
+            <code>sub</code>
+            {"はpairwise（事業者ごとに異なる）。基本4情報は"}
+            <code>name</code> <code>address</code> <code>birthdate</code>{" "}
+            <code>gender</code>
+            {"のスコープで要求し、利用者の同意を得て取得する。"}
           </li>
           <li>
-            民間事業者は認証 API を無償で利用できる。署名
-            API（署名用電子証明書による電子署名）を使う場合は、別途プラットフォーム事業者との契約（有償）などが必要。
+            {"民間事業者は認証APIを無償で利用できる。署名API（署名用電子証明書による電子署名）を使う場合は、別途プラットフォーム事業者との契約（有償）などが必要。"}
           </li>
           <li>
-            利用には事前の申請・打ち合わせ、接続確認環境での試験などの手続きがある。最新の条件は公式の事業者向けページで確認を。
+            {"利用には事前の申請・打ち合わせ、接続確認環境での試験などの手続きがある。最新の条件は公式の事業者向けページで確認を。"}
           </li>
         </ul>
       </GrownUpNote>
@@ -128,8 +129,7 @@ export default function DigitalAuthApp(_handle: Handle) {
       <aside mix={linkBoxStyle}>
         <p>
           <strong>アプリを使ってみたい人へ：</strong>
-          「デジタル認証アプリ」は App Store / Google Play
-          から入れられるよ。くわしくはデジタル庁のページを見てね。
+          {"「デジタル認証アプリ」はApp Store / Google Playから入れられるよ。くわしくはデジタル庁のページを見てね。"}
         </p>
       </aside>
 
@@ -146,7 +146,7 @@ export default function DigitalAuthApp(_handle: Handle) {
           {
             href:
               "https://developers.digital.go.jp/documents/auth-and-sign/authserver/",
-            label: "デジタル庁：API リファレンス（民間事業者向け）",
+            label: "デジタル庁：APIリファレンス（民間事業者向け）",
           },
         ]}
       />

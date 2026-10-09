@@ -30,7 +30,7 @@ export function ChapterHead(
       <header mix={chapterHeadStyle}>
         <p mix={eyebrowStyle}>
           <span mix={badgeStyle} aria-hidden="true">{chapterNumber(key)}</span>
-          だい{chapterNumber(key)}しょう
+          第{chapterNumber(key)}章
         </p>
         <h1>{chapter.title}</h1>
         {handle.props.children
@@ -69,11 +69,11 @@ export function Summary(handle: Handle<{ children: RemixNode }>) {
   );
 }
 
-/** "おとな向けメモ": the real names and numbers, for whoever is reading along with a child. */
+/** "大人向けメモ": the real names and numbers, for whoever is reading along with a child. */
 export function GrownUpNote(handle: Handle<{ children: RemixNode }>) {
   return () => (
     <details mix={noteStyle}>
-      <summary>おとなの人向けメモ（ほんとうの名前と、くわしいこと）</summary>
+      <summary>大人向けメモ（本当の名前と、くわしいこと）</summary>
       <div mix={noteBodyStyle}>{handle.props.children}</div>
     </details>
   );
@@ -156,7 +156,7 @@ export function ChapterNav(handle: Handle<{ chapter: ChapterKey }>) {
           : (
             <a href={routes.home.href()} mix={[pagerStyle, prevStyle]}>
               <small>もどる</small>
-              <span>はじめのページ</span>
+              <span>最初のページ</span>
             </a>
           )}
         {next
@@ -169,7 +169,7 @@ export function ChapterNav(handle: Handle<{ chapter: ChapterKey }>) {
           : (
             <a href={routes.home.href()} mix={[pagerStyle, nextStyle]}>
               <small>おしまい</small>
-              <span>はじめのページへ</span>
+              <span>最初のページへ</span>
             </a>
           )}
       </nav>
@@ -343,7 +343,7 @@ const pagerStyle = css({
   color: color.fg,
   textDecoration: "none",
   "& small": { color: color.accent, fontWeight: 700, fontSize: "0.8rem" },
-  "& span": { fontSize: "0.95rem", lineHeight: 1.6 },
+  "& > span": { fontSize: "0.95rem", lineHeight: 1.6 },
   "&:hover": { borderColor: color.accent, color: color.fg },
 });
 

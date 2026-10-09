@@ -30,12 +30,12 @@ export function StepBar(
         >
           <Icon name="arrowLeft" /> もどる
         </button>
-        <div mix={dotsStyle} aria-label={`${total} こ中 ${step + 1} こめ`}>
+        <div mix={dotsStyle} aria-label={`${total}こ中${step + 1}こめ`}>
           {Array.from({ length: total }, (_, i) => (
             <button
               key={i}
               type="button"
-              aria-label={`${i + 1} こめへ`}
+              aria-label={`${i + 1}こめへ`}
               aria-current={i === step ? "step" : undefined}
               mix={[dotStyle, on("click", () => onGo(i))]}
             />

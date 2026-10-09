@@ -32,10 +32,10 @@ export type ChapterKey =
 export const chapters: readonly Chapter[] = [
   {
     key: "inside",
-    short: "IC チップ",
-    title: "IC チップには何ができる？",
+    short: "ICチップ",
+    title: "ICチップには何ができる？",
     lead:
-      "金色の IC チップは、メモ帳じゃなくて小さなコンピューター。できること・できないことを見てみよう。",
+      "金色のICチップは、メモ帳じゃなくて小さなコンピューター。できること・できないことを見てみよう。",
     icon: "chip",
   },
   {
@@ -48,7 +48,7 @@ export const chapters: readonly Chapter[] = [
   {
     key: "phone",
     short: "スマホの中",
-    title: "スマホにマイナカードが入るって、どういうこと？",
+    title: "スマホにマイナンバーカードが入るって、どういうこと？",
     lead:
       "カードをコピーするんじゃない。スマホの金庫に「スマホ用のカギ」を作るんだ。",
     icon: "phone",
@@ -58,7 +58,7 @@ export const chapters: readonly Chapter[] = [
     short: "本人確認",
     title: "どうやって「本人だ」とわかるの？",
     lead:
-      "毎回ちがう問題に、ひみつのカギで電子署名をつけてもらって、本物かどうかたしかめるよ。",
+      "毎回ちがう問題に、ひみつのカギで電子署名をつけてもらって、本物かどうか確かめるよ。",
     icon: "key",
   },
   {
@@ -72,7 +72,8 @@ export const chapters: readonly Chapter[] = [
     key: "digitalAuthApp",
     short: "デジタル認証アプリ",
     title: "デジタル庁の「デジタル認証アプリ」",
-    lead: "いろいろなサイトが、マイナカードでのログインを無料で使えるしくみ。",
+    lead:
+      "いろいろなサイトが、マイナンバーカードでのログインを無料で使えるしくみ。",
     icon: "landmark",
   },
 ];

@@ -6,7 +6,7 @@ import { CardFront } from "../ui/art.tsx";
 import { Icon } from "../ui/icons.tsx";
 import { art, color, font, radius, wideWidth } from "../tokens.ts";
 
-export const title = `${SITE_NAME} — 動く図でわかるマイナカードのしくみ`;
+export const title = `${SITE_NAME} — 動く図でわかるマイナンバーカードのしくみ`;
 export const description =
   "マイナンバーカードの中身、こわされにくさ、スマホ搭載、本人確認、名前を出さないログイン、デジタル認証アプリまで。動く図で、小学生にもわかるように説明します。";
 
@@ -24,11 +24,10 @@ export default function Home(_handle: Handle) {
               マイナンバーカードの<span mix={accentStyle}>ひみつ</span>
             </h1>
             <p mix={leadStyle}>
-              金色の小さなチップには、どんなしかけがあるんだろう？
-              図をさわりながら、いっしょにのぞいてみよう。
+              {"金色の小さなチップには、どんなしかけがあるんだろう？ 図をさわりながら、いっしょにのぞいてみよう。"}
             </p>
             <a href={chapterHref(chapters[0].key)} mix={ctaStyle}>
-              だい1しょうから読む <Icon name="arrowRight" />
+              第1章から読む <Icon name="arrowRight" />
             </a>
           </div>
           <div mix={stageStyle} aria-hidden="true">
@@ -44,7 +43,7 @@ export default function Home(_handle: Handle) {
         </div>
       </section>
 
-      <h2 mix={sectionTitleStyle}>{chapters.length} つの章</h2>
+      <h2 mix={sectionTitleStyle}>{chapters.length}つの章</h2>
       <ol mix={tocStyle}>
         {chapters.map((c, i) => (
           <li key={c.key}>
@@ -54,9 +53,9 @@ export default function Home(_handle: Handle) {
                   <Icon name={c.icon} size="1.9rem" />
                 </span>
                 <span mix={tocNumberStyle}>
-                  <span mix={visuallyHiddenStyle}>だい</span>
+                  <span mix={visuallyHiddenStyle}>第</span>
                   {i + 1}
-                  <span mix={visuallyHiddenStyle}>しょう</span>
+                  <span mix={visuallyHiddenStyle}>章</span>
                 </span>
               </span>
               <strong>{c.title}</strong>
@@ -93,9 +92,11 @@ export default function Home(_handle: Handle) {
           </span>
         </p>
         <p>
-          <span mix={[howMarkStyle, howBulbStyle]} aria-hidden="true">大</span>
+          <span mix={[howMarkStyle, howBulbStyle]} aria-hidden="true">
+            <Icon name="book" size="1.1rem" />
+          </span>
           <span>
-            <strong>おとなの人向けメモ</strong>に、ほんとうの名前と数字。
+            <strong>大人向けメモ</strong>に、本当の名前と数字。
           </span>
         </p>
       </section>
@@ -335,7 +336,7 @@ const howPlayStyle = css({ background: color.accent, color: color.onAccent });
 const howBulbStyle = css({ background: art.softBlue, color: color.accent });
 const howSummaryStyle = css({ background: art.goldLight, color: art.ink });
 
-/** Read out, not shown: "だい" and "しょう" around a tile's big number. */
+/** Read out, not shown: "第" and "章" around a tile's big number. */
 const visuallyHiddenStyle = css({
   position: "absolute",
   width: "1px",

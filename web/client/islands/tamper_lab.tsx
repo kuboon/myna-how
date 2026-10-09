@@ -50,7 +50,7 @@ const attacks: Attack[] = [
     label: "「ひみつのカギを外に出して」とたのむ",
     mood: "refuse",
     reaction:
-      "そんな命令は、はじめから用意されていないよ。チップができるのは、中のカギを使ってつけた「電子署名」を返すことだけ。カギそのものは、一度も外に出ないんだ。",
+      "そんな命令は、初めから用意されていないよ。チップができるのは、中のカギを使ってつけた「電子署名」を返すことだけ。カギそのものは、一度も外に出ないんだ。",
   },
 ];
 
@@ -71,7 +71,7 @@ export const TamperLab = clientEntry(
 
     const reset = () => {
       mood = "calm";
-      message = "チップはもとどおり。ほかのいたずらもためしてみよう。";
+      message = "チップは元通り。ほかのいたずらも試してみよう。";
       pinOpen = false;
       entry = "";
       misses = 0;
@@ -94,18 +94,18 @@ export const TamperLab = clientEntry(
         if (entry === SECRET) {
           mood = "open";
           message =
-            "わっ、当たった！でも 1 万とおりの中から当てるのは、ふつうはとてもむずかしいよ。";
+            "わっ、当たった！でも1万通りの中から当てるのは、ふつうはとても難しいよ。";
         } else {
           misses++;
           if (misses >= MAX_TRIES) {
             mood = "locked";
             message =
-              "3 回まちがえたので、チップはロックされたよ！もう何回ためしても開かない。本物の持ち主でも、市役所などの窓口で手続きしないと使えないんだ。";
+              "3回まちがえたので、チップはロックされたよ！もう何回試しても開かない。本物の持ち主でも、市役所などの窓口で手続きしないと使えないんだ。";
           } else {
             mood = "alert";
-            message = `ちがう番号だよ。あと ${
+            message = `ちがう番号だよ。あと${
               MAX_TRIES - misses
-            } 回まちがえるとロックされる。`;
+            }回まちがえるとロックされる。`;
           }
         }
         attackKey++;
@@ -124,7 +124,7 @@ export const TamperLab = clientEntry(
             {mood === "calm"
               ? (
                 <>
-                  <Icon name="smile" /> へいき
+                  <Icon name="smile" /> 平気
                 </>
               )
               : mood === "alert"
@@ -136,7 +136,7 @@ export const TamperLab = clientEntry(
               : mood === "refuse"
               ? (
                 <>
-                  <Icon name="ban" /> おことわり
+                  <Icon name="ban" /> お断り
                 </>
               )
               : mood === "locked"
@@ -221,7 +221,7 @@ export const TamperLab = clientEntry(
                 type="button"
                 mix={[buttonStyle, primaryStyle, on("click", reset)]}
               >
-                <Icon name="restart" /> チップをもとにもどす
+                <Icon name="restart" /> チップを元にもどす
               </button>
             </p>
           )
@@ -245,7 +245,7 @@ function ChipFace(handle: Handle<{ mood: Mood }>) {
       <svg
         viewBox="0 0 120 110"
         role="img"
-        aria-label="IC チップ"
+        aria-label="ICチップ"
         style={{ width: "100%", height: "auto", display: "block" }}
       >
         <rect

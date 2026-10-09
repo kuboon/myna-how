@@ -79,12 +79,33 @@ async function withPage(
   }
 }
 
-/** Clicks the first button whose text includes `text`. */
+/**
+ * A page-side expression: whether `selector` has an element whose text, readings left out,
+ * includes every needle. Every kanji carries an `<rt>` reading, which `textContent` would run
+ * into the words — `本物` reads as `本物ほんもの` — so the readings are dropped first.
+ */
+function shows(needles: string[], selector = "body"): string {
+  return `[...document.querySelectorAll(${
+    JSON.stringify(selector)
+  })].some((el) => {
+    const copy = el.cloneNode(true);
+    copy.querySelectorAll("rt").forEach((rt) => rt.remove());
+    const text = copy.textContent ?? "";
+    return ${JSON.stringify(needles)}.every((n) => text.includes(n));
+  })`;
+}
+
+/** Clicks the first button whose text, readings left out, includes `text`. */
 function clickButton(page: import("puppeteer-core").Page, text: string) {
   return page.$$eval(
     "button",
     (els, t) => {
-      const el = els.find((e) => e.textContent?.includes(t as string));
+      const plain = (e: Element) => {
+        const copy = e.cloneNode(true) as Element;
+        copy.querySelectorAll("rt").forEach((rt) => rt.remove());
+        return copy.textContent ?? "";
+      };
+      const el = els.find((e) => plain(e).includes(t as string));
       if (!el) throw new Error(`no button with ${t}`);
       (el as HTMLButtonElement).click();
     },
@@ -105,20 +126,17 @@ Deno.test({
       // メモ帳とチップの比べっこ: チップは中身の読み出しをことわる。
       await clickButton(page, "中身をぜんぶ読ませて");
       await page.waitForFunction(
-        () => document.body.textContent?.includes("おことわり"),
+        shows(["お断り"]),
         { timeout: 5_000 },
       );
       await clickButton(page, "チップの中を見る");
       await page.waitForFunction(
-        () =>
-          [...document.querySelectorAll("button")].some((b) =>
-            b.textContent?.includes("あき部屋")
-          ),
+        shows(["あき部屋"], "button"),
         { timeout: 5_000 },
       );
       await clickButton(page, "入っていないもの");
       await page.waitForFunction(
-        () => document.body.textContent?.includes("チップに入っていないもの"),
+        shows(["チップに入っていないもの"]),
         { timeout: 5_000 },
       );
     });
@@ -137,7 +155,7 @@ Deno.test({
       });
       await clickButton(page, "暗証番号を当てずっぽう");
       await page.waitForFunction(
-        () => document.body.textContent?.includes("まちがい：0 / 3"),
+        shows(["まちがい：0 / 3"]),
         { timeout: 5_000 },
       );
       for (let i = 0; i < 12; i++) {
@@ -147,7 +165,7 @@ Deno.test({
         });
       }
       await page.waitForFunction(
-        () => document.body.textContent?.includes("ロック中"),
+        shows(["ロック中"]),
         { timeout: 5_000 },
       );
       const status = await page.$eval(
@@ -172,25 +190,21 @@ Deno.test({
       });
       for (let i = 0; i < 3; i++) await clickButton(page, "すすむ");
       await page.waitForFunction(
-        () => document.body.textContent?.includes("電子署名は合う"),
+        shows(["電子署名は合う"]),
         { timeout: 5_000 },
       );
       // にせものカードは電子署名のたしかめは通るが、J-LIS のたしかめで落ちる。
       await clickButton(page, "にせものカード");
       for (let i = 0; i < 4; i++) await clickButton(page, "すすむ");
       await page.waitForFunction(
-        () =>
-          document.body.textContent?.includes("電子署名は合う") &&
-          document.body.textContent?.includes("そんな電子証明書は出していない"),
+        shows(["電子署名は合う", "そんな電子証明書は出していない"]),
         { timeout: 5_000 },
       );
       // のぞき見した人が 1 回目の電子署名を盗み、2 回目に使い回しても合わない。
       await clickButton(page, "のぞき見して使い回す");
       for (let i = 0; i < 4; i++) await clickButton(page, "すすむ");
       await page.waitForFunction(
-        () =>
-          document.body.textContent?.includes("これをそのまま返す") &&
-          document.body.textContent?.includes("たしかめると…合わない"),
+        shows(["これをそのまま返す", "確かめると…合わない"]),
         { timeout: 5_000 },
       );
     });
