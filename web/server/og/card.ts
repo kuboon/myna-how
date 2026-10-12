@@ -281,7 +281,7 @@ function drawChapter(pen: Pen, card: ChapterCard): void {
   const left = 96;
   const width = 1200 - left - 460;
 
-  // The number in a circle, and 「だいNしょう」 beside it.
+  // The number in a circle, and 「第N章」 beside it.
   pen.circle(left + 36, 72 + 36, 36, color.accent);
   const number = pen.text(String(card.number), {
     size: 40,
@@ -292,7 +292,7 @@ function drawChapter(pen: Pen, card: ChapterCard): void {
   });
   pen.lay(number, 72);
   pen.draw(number, left, 72 + 36 - number.getHeight() / 2, 72);
-  const eyebrow = pen.text(`だい${card.number}しょう`, {
+  const eyebrow = pen.text(`第${card.number}章`, {
     size: 28,
     color: color.accent,
     round: true,

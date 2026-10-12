@@ -95,10 +95,17 @@ function shows(needles: string[], selector = "body"): string {
   })`;
 }
 
-/** Clicks the first button whose text, readings left out, includes `text`. */
-function clickButton(page: import("puppeteer-core").Page, text: string) {
+/**
+ * Clicks the first button whose text, readings left out, includes `text` — inside `scope` when
+ * a page has more than one moving picture.
+ */
+function clickButton(
+  page: import("puppeteer-core").Page,
+  text: string,
+  scope = "body",
+) {
   return page.$$eval(
-    "button",
+    `${scope} button`,
     (els, t) => {
       const plain = (e: Element) => {
         const copy = e.cloneNode(true) as Element;
@@ -205,6 +212,59 @@ Deno.test({
       for (let i = 0; i < 4; i++) await clickButton(page, "すすむ");
       await page.waitForFunction(
         shows(["これをそのまま返す", "確かめると…合わない"]),
+        { timeout: 5_000 },
+      );
+    });
+  },
+});
+
+Deno.test({
+  name: "lightpanda: /phone で、スマホなら聞かれたことだけを見せる",
+  sanitizeResources: false,
+  sanitizeOps: false,
+  async fn() {
+    await withPage(async (page, origin) => {
+      await page.goto(`${origin}/phone`);
+      await page.waitForFunction("globalThis.__rmxReady === true", {
+        timeout: 10_000,
+      });
+      // カードを見せると、聞いていないことまで見えてしまう。
+      await clickButton(page, "カードを見せる");
+      await page.waitForFunction(shows(["聞いていないことまで見えた"]), {
+        timeout: 5_000,
+      });
+      // スマホなら「20さい以上」の1行だけがとどき、J-LISのしるしで確かめられる。
+      await clickButton(page, "スマホで見せる");
+      const stage = 'section[aria-label*="見せたいこと"]';
+      for (let i = 0; i < 3; i++) await clickButton(page, "すすむ", stage);
+      await page.waitForFunction(
+        shows(["J-LISのしるしと合う：本物", "とどいていない"], stage),
+        { timeout: 5_000 },
+      );
+    });
+  },
+});
+
+Deno.test({
+  name: "lightpanda: /license で、これからのスマホ免許証は未定の例として出る",
+  sanitizeResources: false,
+  sanitizeOps: false,
+  async fn() {
+    await withPage(async (page, origin) => {
+      await page.goto(`${origin}/license`);
+      await page.waitForFunction("globalThis.__rmxReady === true", {
+        timeout: 10_000,
+      });
+      await clickButton(page, "マイナ免許証");
+      await page.waitForFunction(shows(["免許の情報は入らない"]), {
+        timeout: 5_000,
+      });
+      await clickButton(page, "これから");
+      await page.waitForFunction(
+        shows([
+          "まだ決まっていないことの例",
+          "カードを持たなくても運転できるようにする方向",
+        ]),
         { timeout: 5_000 },
       );
     });

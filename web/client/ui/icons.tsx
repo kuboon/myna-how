@@ -126,6 +126,13 @@ export const iconPaths = {
   arrowLeft: ["M20 12H4M10 6l-6 6 6 6"],
   arrowDown: ["M12 4v16M6 14l6 6 6-6"],
   arrowUp: ["M12 20V4M6 10l6-6 6 6"],
+  car: [
+    "M5 11l1.5-4.5A2 2 0 0 1 8.4 5h7.2a2 2 0 0 1 1.9 1.5L19 11",
+    rect(3, 11, 18, 6, 2),
+    "M6 17v2M18 17v2",
+    dot(7, 14),
+    dot(17, 14),
+  ],
   restart: ["M3 12a9 9 0 1 0 3-6.7L3 8", "M3 3v5h5"],
 } as const satisfies Record<string, readonly string[]>;
 

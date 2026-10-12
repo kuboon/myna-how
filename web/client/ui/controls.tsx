@@ -130,9 +130,12 @@ export const captionStyle = css({
 const barStyle = css({
   display: "flex",
   "& > button": { whiteSpace: "nowrap", paddingInline: "1rem" },
+  // On a phone the two buttons need the whole row, so the dots go up onto a row of their own.
   "@media (max-width: 420px)": {
-    gap: "0.35rem",
+    flexWrap: "wrap",
+    gap: "0.5rem",
     "& > button": { paddingInline: "0.75rem", fontSize: "0.9rem" },
+    "& > div": { order: -1, width: "100%" },
   },
   alignItems: "center",
   justifyContent: "space-between",
