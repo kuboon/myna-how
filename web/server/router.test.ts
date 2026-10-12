@@ -50,6 +50,13 @@ for (
   });
 }
 
+Deno.test("GET /phone also hydrates ShowOnly", async () => {
+  const res = await router.fetch(new Request("http://x/phone"));
+  const html = withoutReadings(await res.text());
+  assertStringIncludes(html, "ShowOnly");
+  assertStringIncludes(html, "見せたいことだけ");
+});
+
 Deno.test("GET /api/anything is a 404 — the site has no server API", async () => {
   const res = await router.fetch(new Request("http://x/api/notify"));
   assertEquals(res.status, 404);

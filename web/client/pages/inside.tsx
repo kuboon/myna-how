@@ -184,7 +184,7 @@ export default function Inside(_handle: Handle) {
       <Sources
         items={[
           {
-            href: "https://www.digital.go.jp/policies/mynumber/faq-card",
+            href: "https://www.digital.go.jp/policies/mynumber_faq_03/",
             label: "デジタル庁：マイナンバーカードについてのよくある質問",
           },
           {
