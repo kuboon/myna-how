@@ -244,3 +244,29 @@ Deno.test({
     });
   },
 });
+
+Deno.test({
+  name: "lightpanda: /license で、これからのスマホ免許証は未定の例として出る",
+  sanitizeResources: false,
+  sanitizeOps: false,
+  async fn() {
+    await withPage(async (page, origin) => {
+      await page.goto(`${origin}/license`);
+      await page.waitForFunction("globalThis.__rmxReady === true", {
+        timeout: 10_000,
+      });
+      await clickButton(page, "マイナ免許証");
+      await page.waitForFunction(shows(["免許の情報は入らない"]), {
+        timeout: 5_000,
+      });
+      await clickButton(page, "これから");
+      await page.waitForFunction(
+        shows([
+          "まだ決まっていないことの例",
+          "カードを持たなくても運転できるようにする方向",
+        ]),
+        { timeout: 5_000 },
+      );
+    });
+  },
+});

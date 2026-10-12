@@ -25,6 +25,8 @@ const TERMS = [
   "耐タンパー",
   "搭載",
   "匿名",
+  // 運転免許証、マイナ免許証、免許の種類…… the chapter on licences has no kana for this.
+  "免許",
 ];
 
 const clientDir = new URL("../client/", import.meta.url);

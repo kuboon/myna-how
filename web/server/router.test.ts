@@ -22,6 +22,7 @@ Deno.test("GET / lists every chapter and ships no JavaScript", async () => {
       "/auth",
       "/anonymous",
       "/digital-auth-app",
+      "/license",
     ]
   ) {
     assertStringIncludes(html, `href="${path}"`);
@@ -37,6 +38,7 @@ for (
     ["/auth", "AuthFlow", "公開のカギ"],
     ["/anonymous", "PairwiseDemo", "サイトごとにちがう番号"],
     ["/digital-auth-app", "AppFlow", "OpenID Connect"],
+    ["/license", "LicenseCheck", "モバイル運転免許証"],
   ] as const
 ) {
   Deno.test(`GET ${path} renders its chapter and hydrates ${island}`, async () => {

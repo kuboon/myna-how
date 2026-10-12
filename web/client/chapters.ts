@@ -27,7 +27,8 @@ export type ChapterKey =
   | "phone"
   | "auth"
   | "anonymous"
-  | "digitalAuthApp";
+  | "digitalAuthApp"
+  | "license";
 
 export const chapters: readonly Chapter[] = [
   {
@@ -75,6 +76,14 @@ export const chapters: readonly Chapter[] = [
     lead:
       "いろいろなサイトが、マイナンバーカードでのログインを無料で使えるしくみ。",
     icon: "landmark",
+  },
+  {
+    key: "license",
+    short: "スマホ免許証",
+    title: "スマホが運転免許証になる日は来る？",
+    lead:
+      "今は、カードを持っていないと運転できない。国は、スマホだけで運転できるようにする道を考えているよ。",
+    icon: "car",
   },
 ];
 

@@ -20,4 +20,5 @@ export const routes = route(base, {
   auth: get("/auth"),
   anonymous: get("/anonymous"),
   digitalAuthApp: get("/digital-auth-app"),
+  license: get("/license"),
 });
