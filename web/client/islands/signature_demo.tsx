@@ -29,6 +29,9 @@ const LETTER = "ボブさんへ\nあしたの3時に、公園で会おうね。\
 const ALGORITHM = { name: "ECDSA", namedCurve: "P-256" } as const;
 const SIGN = { name: "ECDSA", hash: "SHA-256" } as const;
 
+/** How long the "making a signature" animation plays. */
+const SIGNING_MS = 1600;
+
 /** Bytes as base64 — natively where the browser can, by hand where it is older. */
 function toBase64(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer);
@@ -79,6 +82,13 @@ export const SignatureDemo = clientEntry(
       bobSignature: "",
     };
     let verdict: Verdict | null = null;
+    /**
+     * While a signature is being made: the secret key and the letter light up, the public key
+     * steps back, and the two flow together into the signature box. Then `justSigned` lets the
+     * new signature pop in.
+     */
+    let signing = false;
+    let justSigned = false;
     /** Something that could not be done, said plainly. */
     let problem = "";
     /**
@@ -139,29 +149,45 @@ export const SignatureDemo = clientEntry(
       handle.update();
     };
 
-    const sign = () =>
-      run(
-        async () => {
-          const key = await crypto.subtle.importKey(
-            "pkcs8",
-            fromBase64(text.alicePrivate),
-            ALGORITHM,
-            false,
-            ["sign"],
-          );
-          set({
-            signature: toBase64(
+    const sign = async () => {
+      busy = true;
+      signing = true;
+      justSigned = false;
+      problem = "";
+      handle.update();
+      try {
+        const [made] = await Promise.all([
+          (async () => {
+            const key = await crypto.subtle.importKey(
+              "pkcs8",
+              fromBase64(text.alicePrivate),
+              ALGORITHM,
+              false,
+              ["sign"],
+            );
+            return toBase64(
               await crypto.subtle.sign(
                 SIGN,
                 key,
                 new TextEncoder().encode(text.letter),
               ),
-            ),
-          });
-          step = 3;
-        },
-        "ひみつのカギがこわれていて、電子署名を作れなかったよ。「カギのペアを作る」からやり直してね。",
-      );
+            );
+          })(),
+          // Long enough to see which two boxes are used.
+          new Promise((done) => setTimeout(done, SIGNING_MS)),
+        ]);
+        set({ signature: made });
+        justSigned = true;
+        step = 3;
+      } catch {
+        problem =
+          "ひみつのカギがこわれていて、電子署名を作れなかったよ。「カギのペアを作る」からやり直してね。";
+      } finally {
+        busy = false;
+        signing = false;
+        handle.update();
+      }
+    };
 
     const sendLetter = () => {
       set({ bobLetter: text.letter, bobSignature: text.signature });
@@ -235,6 +261,7 @@ export const SignatureDemo = clientEntry(
         mix={[
           fieldStyle,
           kind === "letter" ? letterStyle : codeStyle,
+          name === "signature" && justSigned ? popStyle : null,
           on("input", (event) =>
             edit(name, (event.currentTarget as HTMLTextAreaElement).value)),
         ]}
@@ -260,16 +287,57 @@ export const SignatureDemo = clientEntry(
           <section mix={personStyle} aria-label="アリスさん">
             <PersonHead icon="user" name="アリスさん" note="手紙を送る人" />
 
-            <Field label="ひみつのカギ（秘密鍵）" icon="key" secret>
+            <Field
+              label="ひみつのカギ（秘密鍵）"
+              icon="key"
+              secret
+              use={signing ? "used" : null}
+            >
               {box("alicePrivate", "アリスさんのひみつのカギ", "code")}
             </Field>
-            <Field label="公開のカギ（公開鍵）" icon="publicKey">
+            <Field
+              label="公開のカギ（公開鍵）"
+              icon="publicKey"
+              use={signing ? "unused" : null}
+            >
               {box("alicePublic", "アリスさんの公開のカギ", "code")}
             </Field>
-            <Field label="手紙" icon="notebook">
+            <Field
+              label="手紙"
+              icon="notebook"
+              use={signing ? "used" : null}
+            >
               {box("letter", "アリスさんの手紙", "letter")}
             </Field>
-            <Field label="電子署名" icon="sign">
+            {signing
+              ? (
+                <p mix={mixStyle} aria-live="polite">
+                  <span mix={mixRowStyle}>
+                    <span mix={[mixItemStyle, mixKeyStyle]}>
+                      <Icon name="key" />
+                      ひみつのカギ
+                    </span>
+                    <span aria-hidden="true">＋</span>
+                    <span mix={[mixItemStyle, mixLetterStyle]}>
+                      <Icon name="notebook" />
+                      手紙
+                    </span>
+                  </span>
+                  <span mix={mixArrowStyle} aria-hidden="true">
+                    <Icon name="arrowDown" />
+                  </span>
+                  <span mix={[mixItemStyle, mixResultStyle]}>
+                    <Icon name="sign" />
+                    電子署名
+                  </span>
+                </p>
+              )
+              : null}
+            <Field
+              label="電子署名"
+              icon="sign"
+              use={signing ? "made" : null}
+            >
               {box("signature", "アリスさんの電子署名", "code")}
             </Field>
 
@@ -429,21 +497,37 @@ function Field(
     label: string;
     icon: IconName;
     secret?: boolean;
+    /** What this box is doing while a signature is made, if anything. */
+    use?: "used" | "unused" | "made" | null;
     children: unknown;
   }>,
 ) {
-  return () => (
-    <div mix={fieldWrapStyle}>
-      <span mix={[labelStyle, handle.props.secret ? secretLabelStyle : null]}>
-        <Icon name={handle.props.icon} />
-        {handle.props.label}
-        {handle.props.secret
-          ? <small mix={onlyMeStyle}>アリスさんだけ</small>
-          : null}
-      </span>
-      {handle.props.children as never}
-    </div>
-  );
+  return () => {
+    const { use } = handle.props;
+    return (
+      <div
+        mix={[
+          fieldWrapStyle,
+          use === "used" ? usedStyle : null,
+          use === "unused" ? unusedStyle : null,
+          use === "made" ? madeStyle : null,
+        ]}
+      >
+        <span
+          mix={[labelStyle, handle.props.secret ? secretLabelStyle : null]}
+        >
+          <Icon name={handle.props.icon} />
+          {handle.props.label}
+          {use === "used" ? <small mix={useTagStyle}>使う</small> : null}
+          {use === "unused" ? <small mix={idleTagStyle}>使わない</small> : null}
+          {handle.props.secret && !use
+            ? <small mix={onlyMeStyle}>アリスさんだけ</small>
+            : null}
+        </span>
+        {handle.props.children as never}
+      </div>
+    );
+  };
 }
 
 /** One step's button: filled in blue when it is the one to press next. */
@@ -516,6 +600,99 @@ const fieldWrapStyle = css({
   flexDirection: "column",
   gap: "0.25rem",
 });
+
+/** A box the signature is being made from: lit up in gold, pulsing. */
+const usedStyle = css({
+  borderRadius: radius.md,
+  animation: `use-glow ${SIGNING_MS / 2}ms ease-in-out 2`,
+  "& textarea": { borderColor: art.gold, background: art.goldSoft },
+});
+
+/** The public key, which signing does not need: faded back. */
+const unusedStyle = css({ opacity: 0.35, transition: "opacity 300ms" });
+
+/** The signature box, waiting for what is being made. */
+const madeStyle = css({
+  "& textarea": { borderStyle: "dashed", borderColor: color.accent },
+});
+
+const useTagStyle = css({
+  marginLeft: "auto",
+  padding: "0 0.5rem",
+  borderRadius: "999px",
+  background: art.goldLight,
+  color: art.ink,
+  fontSize: "0.7rem",
+  whiteSpace: "nowrap",
+});
+
+const idleTagStyle = css({
+  marginLeft: "auto",
+  padding: "0 0.5rem",
+  borderRadius: "999px",
+  background: color.surface,
+  color: color.muted,
+  fontSize: "0.7rem",
+  whiteSpace: "nowrap",
+});
+
+/** 「ひみつのカギ ＋ 手紙 → 電子署名」, played out while signing. */
+const mixStyle = css({
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "0.35rem",
+  margin: 0,
+  padding: "0.5rem",
+  borderRadius: radius.md,
+  background: color.surface,
+  fontWeight: 700,
+  fontSize: "0.85rem !important",
+});
+
+const mixRowStyle = css({
+  display: "flex",
+  flexWrap: "wrap",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "0.35rem",
+});
+
+const mixItemStyle = css({
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "0.25rem",
+  padding: "0.15rem 0.6rem",
+  borderRadius: "999px",
+  whiteSpace: "nowrap",
+});
+
+const mixKeyStyle = css({
+  background: art.softRed,
+  color: art.ng,
+  animation: `pop-in 300ms ease-out both`,
+});
+
+const mixLetterStyle = css({
+  background: art.goldSoft,
+  color: art.ink,
+  animation: `pop-in 300ms ease-out 250ms both`,
+});
+
+const mixArrowStyle = css({
+  display: "inline-flex",
+  color: color.accent,
+  animation: `pop-in 300ms ease-out 600ms both`,
+});
+
+const mixResultStyle = css({
+  background: color.accent,
+  color: color.onAccent,
+  animation: `pop-in 400ms ease-out 900ms both`,
+});
+
+const popStyle = css({ animation: "pop-in 400ms ease-out" });
 
 const labelStyle = css({
   display: "flex",

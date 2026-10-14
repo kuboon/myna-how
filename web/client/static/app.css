@@ -326,6 +326,18 @@
     }
   }
 
+  /* A box being used — the secret key and the letter, while a signature is made. */
+  @keyframes use-glow {
+    0%,
+    100% {
+      box-shadow: 0 0 0 0 transparent;
+    }
+    50% {
+      box-shadow: 0 0 0 6px color-mix(in srgb, var(--gold-light) 70%,
+        transparent);
+    }
+  }
+
   @keyframes waves {
     0% {
       opacity: 0.9;
