@@ -22,6 +22,7 @@ Deno.test("GET / lists every chapter and ships no JavaScript", async () => {
       "/auth",
       "/anonymous",
       "/digital-auth-app",
+      "/signature",
       "/license",
     ]
   ) {
@@ -38,6 +39,7 @@ for (
     ["/auth", "AuthFlow", "公開のカギ"],
     ["/anonymous", "PairwiseDemo", "サイトごとにちがう番号"],
     ["/digital-auth-app", "AppFlow", "OpenID Connect"],
+    ["/signature", "SignatureDemo", "公開のカギで確かめる"],
     ["/license", "LicenseCheck", "モバイル運転免許証"],
   ] as const
 ) {

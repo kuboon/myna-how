@@ -167,6 +167,8 @@ Deno.test("no kanji reaches a page without a reading", async () => {
     const body = html.slice(html.indexOf("<body"))
       .replace(/<script[\s\S]*?<\/script>/g, "")
       .replace(/<svg[\s\S]*?<\/svg>/g, "")
+      // A text field holds plain text; it cannot hold <ruby>.
+      .replace(/<textarea[\s\S]*?<\/textarea>/g, "")
       .replace(/<ruby>[\s\S]*?<\/ruby>/g, "")
       .replace(/<[^>]+>/g, " ");
     for (const run of body.match(/(?:\p{Script=Han}|々)+/gu) ?? []) {
