@@ -8,9 +8,9 @@
  * three things: the certificate carries J-LIS's signature, the signature matches the form under
  * the certificate's public key, and J-LIS still says the certificate is good.
  *
- * Every key and signature is real (Web Crypto, ECDSA P-256), made when the first button is
- * pressed. "J-LIS" here is a key pair made in this page; the revocation question always answers
- * "still good". Every box but the chip can be edited, so the reader can tamper with what 役所
+ * Every key and signature is real (Web Crypto, ECDSA P-256). The card's key pair is made when the
+ * first button is pressed; J-LIS's is the fixed one in `ui/signature_ui.tsx`, there from the
+ * start. The revocation question always answers "still good". Every box but the chip can be edited, so the reader can tamper with what 役所
  * receives and watch the checks fail.
  */
 
@@ -28,6 +28,8 @@ import {
   fieldStyle,
   footStyle,
   importPublic,
+  JLIS_PUBLIC,
+  jlisSecretKey,
   letterStyle,
   mixArrowStyle,
   mixItemStyle,
@@ -102,15 +104,15 @@ export const OfficialDemo = clientEntry(
       form: FORM,
       signature: "",
       certificate: "",
-      jlisPublic: "",
+      // J-LIS's public key is published; 役所 has it before any form arrives.
+      jlisPublic: JLIS_PUBLIC,
       gotForm: "",
       gotSignature: "",
       gotCertificate: "",
     };
 
-    /** The card's key pair — the secret half cannot be exported, by anyone — and J-LIS's. */
+    /** The card's key pair. The secret half cannot be exported, by anyone. */
     let card: CryptoKeyPair | null = null;
-    let jlis: CryptoKeyPair | null = null;
 
     const set = (values: Partial<Record<FieldName, string>>) => {
       Object.assign(text, values);
@@ -119,12 +121,8 @@ export const OfficialDemo = clientEntry(
 
     /** Made once, the first time the card is used: the card's keys and J-LIS's certificate. */
     const prepareCard = async () => {
-      if (card && jlis) return;
+      if (card) return;
       card = await crypto.subtle.generateKey(ALGORITHM, false, [
-        "sign",
-        "verify",
-      ]);
-      jlis = await crypto.subtle.generateKey(ALGORITHM, false, [
         "sign",
         "verify",
       ]);
@@ -141,17 +139,11 @@ export const OfficialDemo = clientEntry(
       const issued = toBase64(
         await crypto.subtle.sign(
           SIGN,
-          jlis.privateKey,
+          await jlisSecretKey(),
           new TextEncoder().encode(body),
         ),
       );
-      set({
-        certificate: `${body}${CERT_SPLIT}${CERT_SIG}${issued}`,
-        // J-LIS's public key is published; 役所 has it before any form arrives.
-        jlisPublic: toBase64(
-          await crypto.subtle.exportKey("spki", jlis.publicKey),
-        ),
-      });
+      set({ certificate: `${body}${CERT_SPLIT}${CERT_SIG}${issued}` });
     };
 
     const sign = async () => {
@@ -238,7 +230,7 @@ export const OfficialDemo = clientEntry(
 
     const edit = (name: FieldName, value: string) => {
       text[name] = value;
-      if (checks && name.startsWith("got")) {
+      if (checks && (name.startsWith("got") || name === "jlisPublic")) {
         checks = null;
         handle.update();
       }
@@ -248,6 +240,7 @@ export const OfficialDemo = clientEntry(
       set({
         form: FORM,
         signature: "",
+        jlisPublic: JLIS_PUBLIC,
         gotForm: "",
         gotSignature: "",
         gotCertificate: "",

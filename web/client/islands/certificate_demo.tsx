@@ -7,9 +7,10 @@
  * public key and checks the signature with it, which is what tells 役所 that the name and the
  * public key belong together.
  *
- * Every key and signature is real (Web Crypto, ECDSA P-256), made when the first button is pressed.
- * J-LIS's secret key, like the card's, is made unreadable (`extractable: false`) and shown only as a
- * sealed box. Every other box can be edited, so the reader can change a name or a key in what 役所
+ * Every key and signature is real (Web Crypto, ECDSA P-256). J-LIS's key pair is fixed and its
+ * public key is on screen from the start, because it exists before any card; the card's key pair is
+ * made when the first button is pressed. J-LIS's secret key is loaded unreadable
+ * (`extractable: false`) and shown only as a sealed box. Every other box can be edited, so the reader can change a name or a key in what 役所
  * received and watch the check fail.
  */
 
@@ -27,6 +28,8 @@ import {
   fieldStyle,
   footStyle,
   importPublic,
+  JLIS_PUBLIC,
+  jlisSecretKey,
   labelStyle,
   letterStyle,
   mixArrowStyle,
@@ -84,16 +87,14 @@ export const CertificateDemo = clientEntry(
     let written = 0;
     let verdict: Verdict | null = null;
     const text: Record<FieldName, string> = {
-      jlisPublic: "",
+      jlisPublic: JLIS_PUBLIC,
       body: "",
       signature: "",
-      gotJlisPublic: "",
+      // J-LIS's public key is published; 役所 has it before any certificate arrives.
+      gotJlisPublic: JLIS_PUBLIC,
       gotBody: "",
       gotSignature: "",
     };
-
-    /** J-LIS's key pair. The secret half cannot be exported, by anyone. */
-    let jlis: CryptoKeyPair | null = null;
 
     const set = (values: Partial<Record<FieldName, string>>) => {
       Object.assign(text, values);
@@ -106,10 +107,6 @@ export const CertificateDemo = clientEntry(
       problem = "";
       handle.update();
       try {
-        jlis ??= await crypto.subtle.generateKey(ALGORITHM, false, [
-          "sign",
-          "verify",
-        ]);
         const card = await crypto.subtle.generateKey(ALGORITHM, false, [
           "sign",
           "verify",
@@ -117,11 +114,7 @@ export const CertificateDemo = clientEntry(
         const cardPublic = toBase64(
           await crypto.subtle.exportKey("spki", card.publicKey),
         );
-        const jlisPublic = toBase64(
-          await crypto.subtle.exportKey("spki", jlis.publicKey),
-        );
         set({
-          jlisPublic,
           body: [
             "電子証明書（署名用）",
             "名前：まいな さくら",
@@ -130,8 +123,6 @@ export const CertificateDemo = clientEntry(
             "発行：J-LIS",
           ].join("\n"),
           signature: "",
-          // J-LIS's public key is published; 役所 has it before any certificate arrives.
-          gotJlisPublic: jlisPublic,
           gotBody: "",
           gotSignature: "",
         });
@@ -154,10 +145,8 @@ export const CertificateDemo = clientEntry(
       handle.update();
       try {
         const [made] = await Promise.all([
-          crypto.subtle.sign(
-            SIGN,
-            jlis!.privateKey,
-            new TextEncoder().encode(text.body),
+          jlisSecretKey().then((key) =>
+            crypto.subtle.sign(SIGN, key, new TextEncoder().encode(text.body))
           ),
           new Promise((done) => setTimeout(done, SIGNING_MS)),
         ]);
@@ -208,10 +197,10 @@ export const CertificateDemo = clientEntry(
 
     const reset = () => {
       set({
-        jlisPublic: "",
+        jlisPublic: JLIS_PUBLIC,
         body: "",
         signature: "",
-        gotJlisPublic: "",
+        gotJlisPublic: JLIS_PUBLIC,
         gotBody: "",
         gotSignature: "",
       });
@@ -331,7 +320,7 @@ export const CertificateDemo = clientEntry(
               <Action
                 next={step === 1}
                 done={step > 1}
-                enabled={!busy && jlis !== null && text.body !== ""}
+                enabled={!busy && text.body !== ""}
                 label="J-LISが本文に電子署名をつける"
                 onPress={sign}
               />
@@ -437,8 +426,9 @@ export const CertificateDemo = clientEntry(
 );
 
 const captions: Record<Step, string> = {
-  0: "J-LISは、電子証明書を出す所。J-LISも、自分のひみつのカギと公開のカギを持っている。まず「あなたのカードを作る」をおしてみよう。",
-  1: "特別な機械で、あなたのカギのペアができた。ひみつのカギはカードにしまわれて、公開のカギは、名前・住所といっしょに電子証明書の本文に書かれたよ。J-LISの公開のカギは公開されていて、役所も前もって持っている。",
+  0: "J-LISは、電子証明書を出す所。J-LISのひみつのカギと公開のカギは、カードを作るよりずっと前からあって、どのカードの電子証明書にも、同じカギで電子署名をつける。J-LISの公開のカギは公開されていて、役所も前もって持っているよ。まず「あなたのカードを作る」をおしてみよう。",
+  1: "特別な機械で、あなたのカギのペアができた。ひみつのカギはカードにしまわれて、公開のカギは、名前・住所といっしょに電子証明書の本文に書かれたよ。",
+
   2: "J-LISは、自分のひみつのカギと本文から、電子署名を作った。本文とJ-LISの電子署名を合わせたものが、電子証明書だよ。",
   3: "役所に電子証明書がとどいた（本当は、届けといっしょに送られてくる）。役所は、前もって持っているJ-LISの公開のカギで確かめよう。",
   4: "電子署名が合えば、J-LISが出した、書きかえられていない電子証明書だとわかる。受け取った本文の名前を「イブ」に変えたり、公開のカギを1文字だけ変えたりして、もう一度確かめてみよう。",

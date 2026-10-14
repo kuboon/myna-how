@@ -14,6 +14,29 @@ import { art, color, font, radius } from "../tokens.ts";
 export const ALGORITHM = { name: "ECDSA", namedCurve: "P-256" } as const;
 export const SIGN = { name: "ECDSA", hash: "SHA-256" } as const;
 
+/**
+ * J-LIS's key pair in these pictures. It is fixed, not made on a button press, because J-LIS's
+ * keys exist long before any card is made and sign every card's certificate. It is a key made for
+ * this site and written here in the open — the real J-LIS secret key never leaves J-LIS.
+ */
+export const JLIS_PUBLIC =
+  "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE2eNwtyzGC2krNC0PY6jcvE35ipiYWEpwV+xSE36ai7N+yUWmczxD3xg51NDoKhtknGmJO8wxLq8UJAIaxRJggg==";
+
+const JLIS_SECRET: JsonWebKey = {
+  kty: "EC",
+  crv: "P-256",
+  d: "Wyg_TEYacYZjrU9AJ-D9ibeD7U_sYMMJz2uHyG7Ea0g",
+  x: "2eNwtyzGC2krNC0PY6jcvE35ipiYWEpwV-xSE36ai7M",
+  y: "fslFpnM8Q98YOdTQ6CobZJxpiTvMMS6vFCQCGsUSYII",
+};
+
+/** J-LIS's secret key, loaded so that it cannot be read back out. */
+export function jlisSecretKey(): Promise<CryptoKey> {
+  return crypto.subtle.importKey("jwk", JLIS_SECRET, ALGORITHM, false, [
+    "sign",
+  ]);
+}
+
 /** How long the "making a signature" animation plays. */
 export const SIGNING_MS = 1600;
 
