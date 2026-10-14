@@ -34,6 +34,39 @@ export function fromBase64(text: string): Uint8Array<ArrayBuffer> {
   return Uint8Array.from(atob(clean), (c) => c.charCodeAt(0));
 }
 
+/** A signature check that answers no, rather than throwing, when the inputs are not even the right shape. */
+export async function safeVerify(
+  key: CryptoKey,
+  signature: string,
+  data: string,
+): Promise<boolean> {
+  try {
+    return await crypto.subtle.verify(
+      SIGN,
+      key,
+      fromBase64(signature),
+      new TextEncoder().encode(data),
+    );
+  } catch {
+    return false;
+  }
+}
+
+/** A public key from its base64 text, or null when the text is not one. */
+export async function importPublic(text: string): Promise<CryptoKey | null> {
+  try {
+    return await crypto.subtle.importKey(
+      "spki",
+      fromBase64(text),
+      ALGORITHM,
+      false,
+      ["verify"],
+    );
+  } catch {
+    return null;
+  }
+}
+
 export function PersonHead(
   handle: Handle<{ icon: IconName; name: string; note: string }>,
 ) {
@@ -370,3 +403,50 @@ export const captionStyle = css({
 export const problemStyle = css({ background: art.softRed, color: art.ng });
 
 export const footStyle = css({ display: "flex", justifyContent: "flex-end" });
+
+/** A key that stays sealed inside something — the card's chip, J-LIS — shown but never readable. */
+export const sealedBoxStyle = css({
+  display: "flex",
+  flexDirection: "column",
+  gap: "0.35rem",
+  padding: "0.7rem 0.8rem",
+  borderRadius: radius.md,
+  background: color.accent,
+  color: color.onAccent,
+  "& small": { fontSize: "0.8rem", lineHeight: 1.6, opacity: 0.9 },
+});
+
+export const sealedBusyStyle = css({
+  animation: `use-glow ${SIGNING_MS / 2}ms ease-in-out 2`,
+});
+
+export const sealedHeadStyle = css({
+  display: "flex",
+  alignItems: "center",
+  gap: "0.35rem",
+  fontFamily: font.round,
+  fontWeight: 800,
+  fontSize: "0.9rem",
+});
+
+export const sealedKeyStyle = css({
+  display: "flex",
+  alignItems: "center",
+  gap: "0.35rem",
+  padding: "0.4rem 0.6rem",
+  borderRadius: radius.md,
+  background: art.goldLight,
+  color: art.ink,
+  fontWeight: 700,
+  fontSize: "0.85rem",
+});
+
+export const placeholderStyle = css({
+  margin: 0,
+  padding: "0.45rem 0.6rem",
+  border: `2px dashed ${color.line}`,
+  borderRadius: radius.md,
+  color: color.muted,
+  fontSize: "0.85rem !important",
+  lineHeight: "1.6 !important",
+});
