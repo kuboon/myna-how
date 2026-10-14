@@ -294,6 +294,16 @@ Deno.test({
           }),
       );
       assertEquals(enabled, ["カギのペアを作る"]);
+      const official = await page.$$eval(
+        "section[aria-label*='届け'] button:not([disabled])",
+        (els) =>
+          els.map((e) => {
+            const c = e.cloneNode(true) as Element;
+            c.querySelectorAll("rt").forEach((r) => r.remove());
+            return (c.textContent ?? "").trim();
+          }),
+      );
+      assertEquals(official, ["カードで電子署名を作る"]);
     });
   },
 });
