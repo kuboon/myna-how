@@ -18,36 +18,46 @@
  * and in the browser.
  */
 
-import { clientEntry, css, type Handle, on } from "@remix-run/component";
+import { clientEntry, type Handle, on } from "@remix-run/component";
 
-import { buttonStyle, primaryStyle } from "../ui/controls.tsx";
-import { Icon, type IconName } from "../ui/icons.tsx";
-import { art, color, font, radius } from "../tokens.ts";
+import { buttonStyle } from "../ui/controls.tsx";
+import { Icon } from "../ui/icons.tsx";
+import {
+  Action,
+  actionsStyle,
+  ALGORITHM,
+  captionStyle,
+  codeStyle,
+  Field,
+  fieldStyle,
+  footStyle,
+  fromBase64,
+  letterStyle,
+  mixArrowStyle,
+  mixItemStyle,
+  mixKeyStyle,
+  mixLetterStyle,
+  mixResultStyle,
+  mixRowStyle,
+  mixStyle,
+  ngStyle,
+  okStyle,
+  packetStyle,
+  PersonHead,
+  personStyle,
+  popStyle,
+  problemStyle,
+  sceneStyle,
+  SIGN,
+  SIGNING_MS,
+  toBase64,
+  verdictStyle,
+  wireLabelStyle,
+  wireLineStyle,
+  wireStyle,
+} from "../ui/signature_ui.tsx";
 
 const LETTER = "ボブさんへ\nあしたの3時に、公園で会おうね。\nアリスより";
-
-const ALGORITHM = { name: "ECDSA", namedCurve: "P-256" } as const;
-const SIGN = { name: "ECDSA", hash: "SHA-256" } as const;
-
-/** How long the "making a signature" animation plays. */
-const SIGNING_MS = 1600;
-
-/** Bytes as base64 — natively where the browser can, by hand where it is older. */
-function toBase64(buffer: ArrayBuffer): string {
-  const bytes = new Uint8Array(buffer);
-  if (typeof bytes.toBase64 === "function") return bytes.toBase64();
-  let binary = "";
-  for (const b of bytes) binary += String.fromCharCode(b);
-  return btoa(binary);
-}
-
-function fromBase64(text: string): Uint8Array<ArrayBuffer> {
-  const clean = text.replace(/\s+/g, "");
-  if (typeof Uint8Array.fromBase64 === "function") {
-    return Uint8Array.fromBase64(clean) as Uint8Array<ArrayBuffer>;
-  }
-  return Uint8Array.from(atob(clean), (c) => c.charCodeAt(0));
-}
 
 /** The last thing that happened, which picks the sentence under the picture. */
 type Step = 0 | 1 | 2 | 3 | 4 | 5;
@@ -475,340 +485,3 @@ function packet(step: Step) {
   }
   return null;
 }
-
-function PersonHead(
-  handle: Handle<{ icon: IconName; name: string; note: string }>,
-) {
-  return () => (
-    <div mix={personHeadStyle}>
-      <span mix={avatarStyle} aria-hidden="true">
-        <Icon name={handle.props.icon} size="1.6rem" />
-      </span>
-      <span>
-        <strong>{handle.props.name}</strong>
-        <small>{handle.props.note}</small>
-      </span>
-    </div>
-  );
-}
-
-function Field(
-  handle: Handle<{
-    label: string;
-    icon: IconName;
-    secret?: boolean;
-    /** What this box is doing while a signature is made, if anything. */
-    use?: "used" | "unused" | "made" | null;
-    children: unknown;
-  }>,
-) {
-  return () => {
-    const { use } = handle.props;
-    return (
-      <div
-        mix={[
-          fieldWrapStyle,
-          use === "used" ? usedStyle : null,
-          use === "unused" ? unusedStyle : null,
-          use === "made" ? madeStyle : null,
-        ]}
-      >
-        <span
-          mix={[labelStyle, handle.props.secret ? secretLabelStyle : null]}
-        >
-          <Icon name={handle.props.icon} />
-          {handle.props.label}
-          {use === "used" ? <small mix={useTagStyle}>使う</small> : null}
-          {use === "unused" ? <small mix={idleTagStyle}>使わない</small> : null}
-          {handle.props.secret && !use
-            ? <small mix={onlyMeStyle}>アリスさんだけ</small>
-            : null}
-        </span>
-        {handle.props.children as never}
-      </div>
-    );
-  };
-}
-
-/** One step's button: filled in blue when it is the one to press next. */
-function Action(
-  handle: Handle<{
-    next: boolean;
-    done: boolean;
-    enabled: boolean;
-    label: string;
-    onPress: () => void;
-  }>,
-) {
-  return () => {
-    const { next, done, enabled, label, onPress } = handle.props;
-    return (
-      <button
-        type="button"
-        mix={[
-          buttonStyle,
-          next ? primaryStyle : null,
-          actionStyle,
-          on("click", onPress),
-        ]}
-        disabled={!enabled}
-      >
-        {done ? <Icon name="check" /> : null}
-        {label}
-      </button>
-    );
-  };
-}
-
-const sceneStyle = css({
-  display: "grid",
-  gridTemplateColumns: "minmax(0, 1fr) 5rem minmax(0, 1fr)",
-  gap: "0.5rem",
-  "@media (max-width: 640px)": { gridTemplateColumns: "1fr" },
-});
-
-const personStyle = css({
-  display: "flex",
-  flexDirection: "column",
-  gap: "0.6rem",
-  padding: "0.8rem",
-  borderRadius: radius.lg,
-  background: color.card,
-});
-
-const personHeadStyle = css({
-  display: "flex",
-  alignItems: "center",
-  gap: "0.6rem",
-  "& strong": { display: "block", fontFamily: font.round, fontWeight: 800 },
-  "& small": { color: color.muted, fontSize: "0.8rem" },
-});
-
-const avatarStyle = css({
-  display: "grid",
-  placeItems: "center",
-  flex: "none",
-  width: "2.8rem",
-  height: "2.8rem",
-  borderRadius: "999px",
-  background: art.softBlue,
-  color: color.accent,
-});
-
-const fieldWrapStyle = css({
-  display: "flex",
-  flexDirection: "column",
-  gap: "0.25rem",
-});
-
-/** A box the signature is being made from: lit up in gold, pulsing. */
-const usedStyle = css({
-  borderRadius: radius.md,
-  animation: `use-glow ${SIGNING_MS / 2}ms ease-in-out 2`,
-  "& textarea": { borderColor: art.gold, background: art.goldSoft },
-});
-
-/** The public key, which signing does not need: faded back. */
-const unusedStyle = css({ opacity: 0.35, transition: "opacity 300ms" });
-
-/** The signature box, waiting for what is being made. */
-const madeStyle = css({
-  "& textarea": { borderStyle: "dashed", borderColor: color.accent },
-});
-
-const useTagStyle = css({
-  marginLeft: "auto",
-  padding: "0 0.5rem",
-  borderRadius: "999px",
-  background: art.goldLight,
-  color: art.ink,
-  fontSize: "0.7rem",
-  whiteSpace: "nowrap",
-});
-
-const idleTagStyle = css({
-  marginLeft: "auto",
-  padding: "0 0.5rem",
-  borderRadius: "999px",
-  background: color.surface,
-  color: color.muted,
-  fontSize: "0.7rem",
-  whiteSpace: "nowrap",
-});
-
-/** 「ひみつのカギ ＋ 手紙 → 電子署名」, played out while signing. */
-const mixStyle = css({
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: "0.35rem",
-  margin: 0,
-  padding: "0.5rem",
-  borderRadius: radius.md,
-  background: color.surface,
-  fontWeight: 700,
-  fontSize: "0.85rem !important",
-});
-
-const mixRowStyle = css({
-  display: "flex",
-  flexWrap: "wrap",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: "0.35rem",
-});
-
-const mixItemStyle = css({
-  display: "inline-flex",
-  alignItems: "center",
-  gap: "0.25rem",
-  padding: "0.15rem 0.6rem",
-  borderRadius: "999px",
-  whiteSpace: "nowrap",
-});
-
-const mixKeyStyle = css({
-  background: art.softRed,
-  color: art.ng,
-  animation: `pop-in 300ms ease-out both`,
-});
-
-const mixLetterStyle = css({
-  background: art.goldSoft,
-  color: art.ink,
-  animation: `pop-in 300ms ease-out 250ms both`,
-});
-
-const mixArrowStyle = css({
-  display: "inline-flex",
-  color: color.accent,
-  animation: `pop-in 300ms ease-out 600ms both`,
-});
-
-const mixResultStyle = css({
-  background: color.accent,
-  color: color.onAccent,
-  animation: `pop-in 400ms ease-out 900ms both`,
-});
-
-const popStyle = css({ animation: "pop-in 400ms ease-out" });
-
-const labelStyle = css({
-  display: "flex",
-  alignItems: "center",
-  gap: "0.35rem",
-  fontWeight: 700,
-  fontSize: "0.85rem",
-  color: color.accent,
-});
-
-const secretLabelStyle = css({ color: art.ng });
-
-const onlyMeStyle = css({
-  marginLeft: "auto",
-  padding: "0 0.5rem",
-  borderRadius: "999px",
-  background: art.softRed,
-  color: art.ng,
-  fontSize: "0.7rem",
-  whiteSpace: "nowrap",
-});
-
-const fieldStyle = css({
-  width: "100%",
-  padding: "0.45rem 0.6rem",
-  border: `2px solid ${color.line}`,
-  borderRadius: radius.md,
-  background: color.surface,
-  color: color.fg,
-  resize: "vertical",
-});
-
-const codeStyle = css({
-  fontFamily: font.mono,
-  fontSize: "0.72rem",
-  lineHeight: 1.4,
-  wordBreak: "break-all",
-});
-
-const letterStyle = css({
-  fontFamily: "inherit",
-  fontSize: "0.95rem",
-  lineHeight: 1.6,
-});
-
-const actionsStyle = css({
-  display: "flex",
-  flexDirection: "column",
-  gap: "0.4rem",
-});
-
-const actionStyle = css({ fontSize: "0.9rem", minHeight: "2.6rem" });
-
-const wireStyle = css({
-  position: "relative",
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: "0.4rem",
-  minHeight: "6rem",
-});
-
-const wireLabelStyle = css({
-  display: "inline-flex",
-  alignItems: "center",
-  gap: "0.25rem",
-  color: color.muted,
-  fontSize: "0.8rem",
-  fontWeight: 700,
-});
-
-const wireLineStyle = css({
-  width: "100%",
-  borderTop: `3px dashed ${color.line}`,
-  "@media (max-width: 640px)": { width: "60%" },
-});
-
-const packetStyle = css({
-  display: "inline-flex",
-  alignItems: "center",
-  gap: "0.25rem",
-  padding: "0.2rem 0.5rem",
-  borderRadius: "999px",
-  background: color.accent,
-  color: color.onAccent,
-  fontSize: "0.75rem",
-  fontWeight: 700,
-  whiteSpace: "nowrap",
-  animation: "travel-right 900ms ease-out both",
-});
-
-const verdictStyle = css({
-  display: "flex",
-  alignItems: "flex-start",
-  gap: "0.4rem",
-  margin: 0,
-  padding: "0.5rem 0.7rem",
-  borderRadius: radius.md,
-  fontWeight: 700,
-  fontSize: "0.95rem !important",
-  lineHeight: "1.6 !important",
-  animation: "pop-in 300ms ease-out",
-});
-
-const okStyle = css({ background: art.softGreen, color: art.ok });
-const ngStyle = css({ background: art.softRed, color: art.ng });
-
-const captionStyle = css({
-  minHeight: "4.5rem",
-  margin: "0.8rem 0 0.6rem",
-  padding: "0.75rem 1rem",
-  borderRadius: radius.md,
-  background: color.card,
-});
-
-const problemStyle = css({ background: art.softRed, color: art.ng });
-
-const footStyle = css({ display: "flex", justifyContent: "flex-end" });

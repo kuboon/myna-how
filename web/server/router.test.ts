@@ -61,6 +61,13 @@ Deno.test("GET /phone also hydrates ShowOnly", async () => {
   assertStringIncludes(html, "見せたいことだけ");
 });
 
+Deno.test("GET /signature also hydrates OfficialDemo", async () => {
+  const res = await router.fetch(new Request("http://x/signature"));
+  const html = withoutReadings(await res.text());
+  assertStringIncludes(html, "OfficialDemo");
+  assertStringIncludes(html, "役所に届けを出す");
+});
+
 Deno.test("GET /api/anything is a 404 — the site has no server API", async () => {
   const res = await router.fetch(new Request("http://x/api/notify"));
   assertEquals(res.status, 404);

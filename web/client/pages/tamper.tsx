@@ -72,7 +72,7 @@ export default function Tamper(_handle: Handle) {
             15408）の認証を受けたものが使われている。
           </li>
           <li>
-            秘密鍵はチップ内で生成・保管され、外部に取り出すコマンドは存在しない。署名演算はチップの中で行われ、外に出るのは署名値だけ。
+            秘密鍵は、カード発行時に市町村長（またはJ-LIS）の鍵ペア生成装置で作成され、暗号化してチップに送られ、チップ内で復号して記録される。記録後は、外部に取り出すコマンドは存在しない。署名演算はチップの中で行われ、外に出るのは署名値だけ。
           </li>
           <li>
             暗証番号の誤入力回数は、利用者証明用（4けた）が3回、署名用（6〜16文字）が5回でロック。解除・再設定は住所地の市区町村窓口で行う。
@@ -89,6 +89,12 @@ export default function Tamper(_handle: Handle) {
           {
             href: "https://www.kojinbango-card.go.jp/",
             label: "マイナンバーカード総合サイト（J-LIS）",
+          },
+          {
+            href:
+              "https://www.digital.go.jp/assets/contents/node/basic_page/field_ref_resources/d12bde7e-a950-493b-987c-0f8d4bbd1b6b/fdc3a7cb/20260420_laws_notice_03.pdf",
+            label:
+              "総務省告示第706号：認証業務及びこれに附帯する業務の実施に関する技術的基準",
           },
         ]}
       />
