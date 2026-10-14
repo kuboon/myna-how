@@ -7,6 +7,10 @@
  * SHA-256), shown as base64. Nothing is explained about how they are computed — the chapter is
  * about who holds what, and what the check proves.
  *
+ * Every box can be typed in, keys and signatures included, so a reader can change one character
+ * of what ボブさん received and watch the check fail. A check that fails — or that cannot even
+ * read the key or the signature — is shown as an error.
+ *
  * The line between the two is where イブさん, who reads and tampers with what passes, will stand
  * later.
  *
@@ -42,37 +46,61 @@ function fromBase64(text: string): Uint8Array<ArrayBuffer> {
   return Uint8Array.from(atob(clean), (c) => c.charCodeAt(0));
 }
 
-/** How far the story has got. Each step needs the one before it. */
+/** The last thing that happened, which picks the sentence under the picture. */
 type Step = 0 | 1 | 2 | 3 | 4 | 5;
+
+/** What ボブさん's check came to. */
+type Verdict =
+  | { ok: true }
+  | { ok: false; reason: "mismatch" | "broken" };
+
+/** Every text box, by name. They are all editable; the buttons copy between them. */
+type FieldName =
+  | "alicePrivate"
+  | "alicePublic"
+  | "letter"
+  | "signature"
+  | "bobPublic"
+  | "bobLetter"
+  | "bobSignature";
 
 export const SignatureDemo = clientEntry(
   import.meta.url,
   function SignatureDemo(handle: Handle) {
     let step: Step = 0;
     let busy = false;
-    let privateKey: CryptoKey | null = null;
-    let alicePrivate = "";
-    let alicePublic = "";
-    let letter = LETTER;
-    let signature = "";
-    let bobPublic = "";
-    let bobLetter = "";
-    let bobSignature = "";
-    let verdict: boolean | null = null;
-    /** Something the browser could not do, said plainly. */
+    const text: Record<FieldName, string> = {
+      alicePrivate: "",
+      alicePublic: "",
+      letter: LETTER,
+      signature: "",
+      bobPublic: "",
+      bobLetter: "",
+      bobSignature: "",
+    };
+    let verdict: Verdict | null = null;
+    /** Something that could not be done, said plainly. */
     let problem = "";
-    /** Bumped on reset, so the letter's text area starts over with the default text. */
-    let round = 0;
+    /**
+     * Bumped whenever a button writes into the boxes. The boxes are uncontrolled (what is typed
+     * stays typed), so they are re-mounted with the new text rather than overwritten under the
+     * reader's cursor.
+     */
+    let written = 0;
 
-    const run = async (work: () => Promise<void>) => {
+    const set = (values: Partial<Record<FieldName, string>>) => {
+      Object.assign(text, values);
+      written += 1;
+    };
+
+    const run = async (work: () => Promise<void>, failure: string) => {
       busy = true;
       problem = "";
       handle.update();
       try {
         await work();
       } catch {
-        problem =
-          "このブラウザでは、カギや電子署名を作れなかったよ。新しいブラウザでためしてね。";
+        problem = failure;
       } finally {
         busy = false;
         handle.update();
@@ -80,89 +108,150 @@ export const SignatureDemo = clientEntry(
     };
 
     const makeKeys = () =>
-      run(async () => {
-        const pair = await crypto.subtle.generateKey(ALGORITHM, true, [
-          "sign",
-          "verify",
-        ]);
-        privateKey = pair.privateKey;
-        alicePrivate = toBase64(
-          await crypto.subtle.exportKey("pkcs8", pair.privateKey),
-        );
-        alicePublic = toBase64(
-          await crypto.subtle.exportKey("spki", pair.publicKey),
-        );
-        signature =
-          bobPublic =
-          bobLetter =
-          bobSignature =
-            "";
-        verdict = null;
-        step = 1;
-      });
+      run(
+        async () => {
+          const pair = await crypto.subtle.generateKey(ALGORITHM, true, [
+            "sign",
+            "verify",
+          ]);
+          set({
+            alicePrivate: toBase64(
+              await crypto.subtle.exportKey("pkcs8", pair.privateKey),
+            ),
+            alicePublic: toBase64(
+              await crypto.subtle.exportKey("spki", pair.publicKey),
+            ),
+            signature: "",
+            bobPublic: "",
+            bobLetter: "",
+            bobSignature: "",
+          });
+          verdict = null;
+          step = 1;
+        },
+        "このブラウザでは、カギを作れなかったよ。新しいブラウザでためしてね。",
+      );
 
     const sendKey = () => {
-      bobPublic = alicePublic;
+      set({ bobPublic: text.alicePublic });
+      verdict = null;
       step = 2;
       handle.update();
     };
 
     const sign = () =>
-      run(async () => {
-        const data = new TextEncoder().encode(letter);
-        signature = toBase64(
-          await crypto.subtle.sign(SIGN, privateKey!, data),
-        );
-        step = 3;
-      });
+      run(
+        async () => {
+          const key = await crypto.subtle.importKey(
+            "pkcs8",
+            fromBase64(text.alicePrivate),
+            ALGORITHM,
+            false,
+            ["sign"],
+          );
+          set({
+            signature: toBase64(
+              await crypto.subtle.sign(
+                SIGN,
+                key,
+                new TextEncoder().encode(text.letter),
+              ),
+            ),
+          });
+          step = 3;
+        },
+        "ひみつのカギがこわれていて、電子署名を作れなかったよ。「カギのペアを作る」からやり直してね。",
+      );
 
     const sendLetter = () => {
-      bobLetter = letter;
-      bobSignature = signature;
+      set({ bobLetter: text.letter, bobSignature: text.signature });
       verdict = null;
       step = 4;
       handle.update();
     };
 
-    const verify = () =>
-      run(async () => {
+    const verify = async () => {
+      busy = true;
+      problem = "";
+      handle.update();
+      try {
         const key = await crypto.subtle.importKey(
           "spki",
-          fromBase64(bobPublic),
+          fromBase64(text.bobPublic),
           ALGORITHM,
           false,
           ["verify"],
         );
-        verdict = await crypto.subtle.verify(
+        const ok = await crypto.subtle.verify(
           SIGN,
           key,
-          fromBase64(bobSignature),
-          new TextEncoder().encode(bobLetter),
+          fromBase64(text.bobSignature),
+          new TextEncoder().encode(text.bobLetter),
         );
+        verdict = ok ? { ok: true } : { ok: false, reason: "mismatch" };
+      } catch {
+        // A public key or signature that is not even the right shape is a failed check too.
+        verdict = { ok: false, reason: "broken" };
+      } finally {
+        busy = false;
         step = 5;
-      });
+        handle.update();
+      }
+    };
 
-    const editLetter = (text: string) => {
-      letter = text;
-      // A signature belongs to the letter it was made for; a changed letter needs a new one.
-      if (step >= 3) {
-        signature = bobLetter = bobSignature = "";
+    /** Typing keeps the text; a new check is needed once anything ボブさん holds changes. */
+    const edit = (name: FieldName, value: string) => {
+      text[name] = value;
+      if (verdict && name.startsWith("bob")) {
         verdict = null;
-        step = 2;
         handle.update();
       }
     };
 
     const reset = () => {
+      set({
+        alicePrivate: "",
+        alicePublic: "",
+        letter: LETTER,
+        signature: "",
+        bobPublic: "",
+        bobLetter: "",
+        bobSignature: "",
+      });
       step = 0;
-      privateKey = null;
-      alicePrivate = alicePublic = signature = "";
-      bobPublic = bobLetter = bobSignature = "";
-      letter = LETTER;
       verdict = null;
       problem = "";
-      round += 1;
       handle.update();
+    };
+
+    /** An editable box for one of the named texts. */
+    const box = (
+      name: FieldName,
+      label: string,
+      kind: "code" | "letter",
+    ) => (
+      <textarea
+        key={`${name}-${written}`}
+        mix={[
+          fieldStyle,
+          kind === "letter" ? letterStyle : codeStyle,
+          on("input", (event) =>
+            edit(name, (event.currentTarget as HTMLTextAreaElement).value)),
+        ]}
+        rows={kind === "letter" ? 4 : 3}
+        spellcheck={false}
+        defaultValue={text[name]}
+        aria-label={label}
+        placeholder={kind === "letter" ? undefined : "まだない"}
+      />
+    );
+
+    /** Whether each button can be pressed: when what it needs is there. */
+    const can = {
+      sendKey: () => text.alicePublic !== "",
+      sign: () => text.alicePrivate !== "",
+      sendLetter: () => text.signature !== "",
+      verify: () => text.bobPublic !== "" && text.bobSignature !== "",
     };
 
     return () => (
@@ -172,58 +261,44 @@ export const SignatureDemo = clientEntry(
             <PersonHead icon="user" name="アリスさん" note="手紙を送る人" />
 
             <Field label="ひみつのカギ（秘密鍵）" icon="key" secret>
-              <Box text={alicePrivate} empty="まだない" />
+              {box("alicePrivate", "アリスさんのひみつのカギ", "code")}
             </Field>
             <Field label="公開のカギ（公開鍵）" icon="publicKey">
-              <Box text={alicePublic} empty="まだない" />
+              {box("alicePublic", "アリスさんの公開のカギ", "code")}
             </Field>
             <Field label="手紙" icon="notebook">
-              <textarea
-                key={`letter-${round}`}
-                mix={[
-                  fieldStyle,
-                  letterStyle,
-                  on("input", (event) =>
-                    editLetter(
-                      (event.currentTarget as HTMLTextAreaElement).value,
-                    )),
-                ]}
-                rows={4}
-                defaultValue={LETTER}
-                aria-label="アリスさんの手紙"
-                disabled={step < 2}
-              />
+              {box("letter", "アリスさんの手紙", "letter")}
             </Field>
             <Field label="電子署名" icon="sign">
-              <Box text={signature} empty="まだない" />
+              {box("signature", "アリスさんの電子署名", "code")}
             </Field>
 
             <div mix={actionsStyle}>
               <Action
-                at={0}
-                step={step}
-                busy={busy}
+                next={step === 0}
+                done={step > 0}
+                enabled={!busy}
                 label="カギのペアを作る"
                 onPress={makeKeys}
               />
               <Action
-                at={1}
-                step={step}
-                busy={busy}
+                next={step === 1}
+                done={step > 1}
+                enabled={!busy && can.sendKey()}
                 label="公開のカギをボブさんに送る"
                 onPress={sendKey}
               />
               <Action
-                at={2}
-                step={step}
-                busy={busy}
+                next={step === 2}
+                done={step > 2}
+                enabled={!busy && can.sign()}
                 label="電子署名を作る"
                 onPress={sign}
               />
               <Action
-                at={3}
-                step={step}
-                busy={busy}
+                next={step === 3}
+                done={step > 3}
+                enabled={!busy && can.sendLetter()}
                 label="手紙と電子署名を送る"
                 onPress={sendLetter}
               />
@@ -243,20 +318,20 @@ export const SignatureDemo = clientEntry(
             <PersonHead icon="user" name="ボブさん" note="手紙を受け取る人" />
 
             <Field label="アリスさんの公開のカギ" icon="publicKey">
-              <Box text={bobPublic} empty="まだとどいていない" />
+              {box("bobPublic", "ボブさんが持っている公開のカギ", "code")}
             </Field>
             <Field label="とどいた手紙" icon="notebook">
-              <Box text={bobLetter} empty="まだとどいていない" plain />
+              {box("bobLetter", "ボブさんにとどいた手紙", "letter")}
             </Field>
             <Field label="とどいた電子署名" icon="sign">
-              <Box text={bobSignature} empty="まだとどいていない" />
+              {box("bobSignature", "ボブさんにとどいた電子署名", "code")}
             </Field>
 
             <div mix={actionsStyle}>
               <Action
-                at={4}
-                step={step}
-                busy={busy}
+                next={step === 4}
+                done={false}
+                enabled={!busy && can.verify()}
                 label="公開のカギで確かめる"
                 onPress={verify}
               />
@@ -264,19 +339,26 @@ export const SignatureDemo = clientEntry(
 
             {verdict === null ? null : (
               <p
-                mix={[verdictStyle, verdict ? okStyle : ngStyle]}
+                key={`v-${written}-${verdict.ok}`}
+                mix={[verdictStyle, verdict.ok ? okStyle : ngStyle]}
+                role={verdict.ok ? undefined : "alert"}
                 aria-live="polite"
               >
-                <Icon name={verdict ? "check" : "x"} />
-                {verdict
+                <Icon name={verdict.ok ? "check" : "x"} />
+                {verdict.ok
                   ? "電子署名は合う：アリスさんが書いた、そのままの手紙"
-                  : "電子署名が合わない"}
+                  : verdict.reason === "mismatch"
+                  ? "エラー：電子署名が合わない。手紙か電子署名か公開のカギが、アリスさんが送ったものとちがう"
+                  : "エラー：確かめられない。公開のカギか電子署名の文字がこわれている"}
               </p>
             )}
           </section>
         </div>
 
-        <p mix={captionStyle} aria-live="polite">
+        <p
+          mix={[captionStyle, problem ? problemStyle : null]}
+          aria-live="polite"
+        >
           {problem || captions[step]}
         </p>
 
@@ -302,7 +384,7 @@ const captions: Record<Step, string> = {
   2: "アリスさんが手紙を書くよ。文を自由に書きかえてもいい。書けたら、ひみつのカギで電子署名を作ろう。",
   3: "電子署名ができた。手紙とひみつのカギから作ったものだよ。手紙といっしょにボブさんへ送ろう。",
   4: "ボブさんに手紙と電子署名がとどいた。ボブさんは、前にもらった公開のカギで確かめてみよう。",
-  5: "公開のカギで確かめると、アリスさんのひみつのカギで作った電子署名か、手紙が書きかえられていないかがわかるんだ。",
+  5: "公開のカギで確かめると、アリスさんのひみつのカギで作った電子署名か、手紙が書きかえられていないかがわかるんだ。ボブさんの手紙や電子署名を1文字だけ書きかえて、もう一度確かめてみよう。",
 };
 
 /** The little card that rides along the wire for the most recent send. */
@@ -364,37 +446,18 @@ function Field(
   );
 }
 
-/** A read-only text field. Re-mounted when its text changes, so it always shows the latest. */
-function Box(
-  handle: Handle<{ text: string; empty: string; plain?: boolean }>,
-) {
-  return () => {
-    const { text, empty, plain } = handle.props;
-    if (!text) return <div mix={[fieldStyle, emptyStyle]}>{empty}</div>;
-    return (
-      <textarea
-        key={text}
-        mix={[fieldStyle, plain ? letterStyle : codeStyle, popStyle]}
-        rows={plain ? 4 : 3}
-        readOnly
-        defaultValue={text}
-      />
-    );
-  };
-}
-
+/** One step's button: filled in blue when it is the one to press next. */
 function Action(
   handle: Handle<{
-    at: Step;
-    step: Step;
-    busy: boolean;
+    next: boolean;
+    done: boolean;
+    enabled: boolean;
     label: string;
     onPress: () => void;
   }>,
 ) {
   return () => {
-    const { at, step, busy, label, onPress } = handle.props;
-    const next = step === at;
+    const { next, done, enabled, label, onPress } = handle.props;
     return (
       <button
         type="button"
@@ -404,9 +467,9 @@ function Action(
           actionStyle,
           on("click", onPress),
         ]}
-        disabled={!next || busy}
+        disabled={!enabled}
       >
-        {step > at ? <Icon name="check" /> : null}
+        {done ? <Icon name="check" /> : null}
         {label}
       </button>
     );
@@ -496,16 +559,7 @@ const letterStyle = css({
   fontFamily: "inherit",
   fontSize: "0.95rem",
   lineHeight: 1.6,
-  "&:disabled": { opacity: 0.6 },
 });
-
-const emptyStyle = css({
-  color: color.muted,
-  fontSize: "0.85rem",
-  borderStyle: "dashed",
-});
-
-const popStyle = css({ animation: "pop-in 300ms ease-out" });
 
 const actionsStyle = css({
   display: "flex",
@@ -577,5 +631,7 @@ const captionStyle = css({
   borderRadius: radius.md,
   background: color.card,
 });
+
+const problemStyle = css({ background: art.softRed, color: art.ng });
 
 const footStyle = css({ display: "flex", justifyContent: "flex-end" });
