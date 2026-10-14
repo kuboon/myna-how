@@ -28,6 +28,7 @@ export type ChapterKey =
   | "auth"
   | "anonymous"
   | "digitalAuthApp"
+  | "signature"
   | "license";
 
 export const chapters: readonly Chapter[] = [
@@ -76,6 +77,14 @@ export const chapters: readonly Chapter[] = [
     lead:
       "いろいろなサイトが、マイナンバーカードでのログインを無料で使えるしくみ。",
     icon: "landmark",
+  },
+  {
+    key: "signature",
+    short: "電子署名",
+    title: "電子署名を、自分で作ってみよう",
+    lead:
+      "アリスさんがボブさんに手紙を送るよ。本当にアリスさんが書いたと、ボブさんはどうやってわかるのかな？",
+    icon: "sign",
   },
   {
     key: "license",

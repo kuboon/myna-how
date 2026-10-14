@@ -270,3 +270,30 @@ Deno.test({
     });
   },
 });
+
+Deno.test({
+  name: "lightpanda: /signature は、カギを作るところから始まる",
+  sanitizeResources: false,
+  sanitizeOps: false,
+  async fn() {
+    // lightpanda can generate an ECDSA key but cannot export one (NotSupportedError), so the
+    // whole flow — keys, signature, check — is verified in a full browser instead. Here: the
+    // first render waits for the first button, and nothing else can be pressed yet.
+    await withPage(async (page, origin) => {
+      await page.goto(`${origin}/signature`);
+      await page.waitForFunction("globalThis.__rmxReady === true", {
+        timeout: 10_000,
+      });
+      const enabled = await page.$$eval(
+        "section[aria-label*='電子署名'] button:not([disabled])",
+        (els) =>
+          els.map((e) => {
+            const c = e.cloneNode(true) as Element;
+            c.querySelectorAll("rt").forEach((r) => r.remove());
+            return (c.textContent ?? "").trim();
+          }),
+      );
+      assertEquals(enabled, ["カギのペアを作る"]);
+    });
+  },
+});

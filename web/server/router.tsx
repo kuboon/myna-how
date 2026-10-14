@@ -36,6 +36,7 @@ import * as Auth from "../client/pages/auth.tsx";
 import * as Anonymous from "../client/pages/anonymous.tsx";
 import * as DigitalAuthApp from "../client/pages/digital_auth_app.tsx";
 import * as License from "../client/pages/license.tsx";
+import * as Signature from "../client/pages/signature.tsx";
 
 /** Deploy path prefix. The build strips it back off when writing, so output lands at the root. */
 export { base };
@@ -104,6 +105,7 @@ const pages = createController(routes, {
       DigitalAuthApp,
       "digitalAuthApp",
     ),
+    signature: pageAction(routes.signature, Signature, "signature"),
     license: pageAction(routes.license, License, "license"),
   },
 });
