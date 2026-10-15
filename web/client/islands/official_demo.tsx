@@ -2,15 +2,15 @@
  * The electronic-signature chapter's second picture: sending a form (届け) to 役所 with the My Number
  * Card.
  *
- * Unlike アリスさん, あなた never makes or sees a secret key: it was made inside the card's chip and
- * never leaves it, and the picture shows it only as a sealed box. What travels is the form, the
+ * Unlike アリスさん, あなた never makes or sees a secret key: it was written into the card's chip
+ * when the card was made and never leaves it, and the picture shows it only as a sealed box. What travels is the form, the
  * signature, and the 電子証明書 — J-LIS's signed statement of whose public key it is. 役所 checks
  * three things: the certificate carries J-LIS's signature, the signature matches the form under
  * the certificate's public key, and J-LIS still says the certificate is good.
  *
- * Every key and signature is real (Web Crypto, ECDSA P-256), made when the first button is
- * pressed. "J-LIS" here is a key pair made in this page; the revocation question always answers
- * "still good". Every box but the chip can be edited, so the reader can tamper with what 役所
+ * Every key and signature is real (Web Crypto, ECDSA P-256). The card's key pair is made when the
+ * first button is pressed; J-LIS's is the fixed one in `ui/signature_ui.tsx`, there from the
+ * start. The revocation question always answers "still good". Every box but the chip can be edited, so the reader can tamper with what 役所
  * receives and watch the checks fail.
  */
 
@@ -27,7 +27,9 @@ import {
   Field,
   fieldStyle,
   footStyle,
-  fromBase64,
+  importPublic,
+  JLIS_PUBLIC,
+  jlisSecretKey,
   letterStyle,
   mixArrowStyle,
   mixItemStyle,
@@ -41,9 +43,15 @@ import {
   packetStyle,
   PersonHead,
   personStyle,
+  placeholderStyle,
   popStyle,
   problemStyle,
+  safeVerify,
   sceneStyle,
+  sealedBoxStyle,
+  sealedBusyStyle,
+  sealedHeadStyle,
+  sealedKeyStyle,
   SIGN,
   SIGNING_MS,
   toBase64,
@@ -52,7 +60,7 @@ import {
   wireLineStyle,
   wireStyle,
 } from "../ui/signature_ui.tsx";
-import { art, color, font, radius } from "../tokens.ts";
+import { color, radius } from "../tokens.ts";
 
 const FORM =
   "引っこしの届け\n名前：まいな さくら\n今の住所：○○市△△町1-2-3\n引っこし先：□□市◇◇町4-5-6";
@@ -68,6 +76,7 @@ type FieldName =
   | "form"
   | "signature"
   | "certificate"
+  | "jlisPublic"
   | "gotForm"
   | "gotSignature"
   | "gotCertificate";
@@ -95,14 +104,15 @@ export const OfficialDemo = clientEntry(
       form: FORM,
       signature: "",
       certificate: "",
+      // J-LIS's public key is published; 役所 has it before any form arrives.
+      jlisPublic: JLIS_PUBLIC,
       gotForm: "",
       gotSignature: "",
       gotCertificate: "",
     };
 
-    /** The card's key pair — the secret half cannot be exported, by anyone — and J-LIS's. */
+    /** The card's key pair. The secret half cannot be exported, by anyone. */
     let card: CryptoKeyPair | null = null;
-    let jlis: CryptoKeyPair | null = null;
 
     const set = (values: Partial<Record<FieldName, string>>) => {
       Object.assign(text, values);
@@ -111,12 +121,8 @@ export const OfficialDemo = clientEntry(
 
     /** Made once, the first time the card is used: the card's keys and J-LIS's certificate. */
     const prepareCard = async () => {
-      if (card && jlis) return;
+      if (card) return;
       card = await crypto.subtle.generateKey(ALGORITHM, false, [
-        "sign",
-        "verify",
-      ]);
-      jlis = await crypto.subtle.generateKey(ALGORITHM, false, [
         "sign",
         "verify",
       ]);
@@ -133,7 +139,7 @@ export const OfficialDemo = clientEntry(
       const issued = toBase64(
         await crypto.subtle.sign(
           SIGN,
-          jlis.privateKey,
+          await jlisSecretKey(),
           new TextEncoder().encode(body),
         ),
       );
@@ -198,24 +204,15 @@ export const OfficialDemo = clientEntry(
         const issued = tail.startsWith(CERT_SIG)
           ? tail.slice(CERT_SIG.length)
           : "";
-        // ① The certificate: does J-LIS's public key accept J-LIS's signature on it?
-        result.issuer = await safeVerify(
-            jlis!.publicKey,
-            issued,
-            body,
-          )
+        // ① The certificate: does J-LIS's public key, as 役所 holds it, accept J-LIS's signature?
+        const jlisKey = await importPublic(text.jlisPublic);
+        result.issuer = jlisKey && await safeVerify(jlisKey, issued, body)
           ? "ok"
           : "ng";
         if (result.issuer === "ok") {
           // ② The form: does the certificate's public key accept the signature on it?
           const keyLine = body.split("\n").find((l) => l.startsWith(CERT_KEY));
-          const key = await crypto.subtle.importKey(
-            "spki",
-            fromBase64(keyLine?.slice(CERT_KEY.length) ?? ""),
-            ALGORITHM,
-            false,
-            ["verify"],
-          ).catch(() => null);
+          const key = await importPublic(keyLine?.slice(CERT_KEY.length) ?? "");
           result.signature = key &&
               await safeVerify(key, text.gotSignature, text.gotForm)
             ? "ok"
@@ -233,7 +230,7 @@ export const OfficialDemo = clientEntry(
 
     const edit = (name: FieldName, value: string) => {
       text[name] = value;
-      if (checks && name.startsWith("got")) {
+      if (checks && (name.startsWith("got") || name === "jlisPublic")) {
         checks = null;
         handle.update();
       }
@@ -243,6 +240,7 @@ export const OfficialDemo = clientEntry(
       set({
         form: FORM,
         signature: "",
+        jlisPublic: JLIS_PUBLIC,
         gotForm: "",
         gotSignature: "",
         gotCertificate: "",
@@ -281,14 +279,14 @@ export const OfficialDemo = clientEntry(
               <PersonHead icon="user" name="あなた" note="届けを送る人" />
 
               <div
-                mix={[chipStyle, signing ? chipBusyStyle : null]}
+                mix={[sealedBoxStyle, signing ? sealedBusyStyle : null]}
                 aria-label="マイナンバーカードのICチップ"
               >
-                <span mix={chipHeadStyle}>
+                <span mix={sealedHeadStyle}>
                   <Icon name="chip" />
                   マイナンバーカードのICチップ
                 </span>
-                <span mix={sealedStyle}>
+                <span mix={sealedKeyStyle}>
                   <Icon name="lock" />
                   ひみつのカギ（秘密鍵）
                 </span>
@@ -390,6 +388,12 @@ export const OfficialDemo = clientEntry(
                 note="届けを受け取る所"
               />
 
+              <Field
+                label="J-LISの公開のカギ（前もって持っている）"
+                icon="publicKey"
+              >
+                {box("jlisPublic", "役所が持っているJ-LISの公開のカギ", "code")}
+              </Field>
               <Field label="受け取った届け" icon="clipboard">
                 {box("gotForm", "役所が受け取った届け", "letter")}
               </Field>
@@ -416,7 +420,7 @@ export const OfficialDemo = clientEntry(
                   <ol key={`c-${written}`} mix={checksStyle}>
                     <CheckRow
                       result={checks.issuer}
-                      label="電子証明書は、J-LISが出した本物？"
+                      label="J-LISの公開のカギで、電子証明書のJ-LISの電子署名は合う？"
                     />
                     <CheckRow
                       result={checks.signature}
@@ -468,24 +472,6 @@ export const OfficialDemo = clientEntry(
   },
 );
 
-/** A signature check that answers no, rather than throwing, when the inputs are not even the right shape. */
-async function safeVerify(
-  key: CryptoKey,
-  signature: string,
-  data: string,
-): Promise<boolean> {
-  try {
-    return await crypto.subtle.verify(
-      SIGN,
-      key,
-      fromBase64(signature),
-      new TextEncoder().encode(data),
-    );
-  } catch {
-    return false;
-  }
-}
-
 const captions: Record<Step, string> = {
   0: "あなたのマイナンバーカードのICチップには、ひみつのカギが入っている。だれにも見えないし、書きかえることもできない。届けが書けたら、カードで電子署名を作ろう。",
   1: "電子署名は、ICチップの中で作られる。ひみつのカギは、チップの外に出てこないよ（本当は、ここで暗証番号を入れて、カードをスマホなどにかざす）。",
@@ -514,52 +500,6 @@ function CheckRow(handle: Handle<{ result: Check; label: string }>) {
     );
   };
 }
-
-const chipStyle = css({
-  display: "flex",
-  flexDirection: "column",
-  gap: "0.35rem",
-  padding: "0.7rem 0.8rem",
-  borderRadius: radius.md,
-  background: color.accent,
-  color: color.onAccent,
-  "& small": { fontSize: "0.8rem", lineHeight: 1.6, opacity: 0.9 },
-});
-
-const chipBusyStyle = css({
-  animation: `use-glow ${SIGNING_MS / 2}ms ease-in-out 2`,
-});
-
-const chipHeadStyle = css({
-  display: "flex",
-  alignItems: "center",
-  gap: "0.35rem",
-  fontFamily: font.round,
-  fontWeight: 800,
-  fontSize: "0.9rem",
-});
-
-const sealedStyle = css({
-  display: "flex",
-  alignItems: "center",
-  gap: "0.35rem",
-  padding: "0.4rem 0.6rem",
-  borderRadius: radius.md,
-  background: art.goldLight,
-  color: art.ink,
-  fontWeight: 700,
-  fontSize: "0.85rem",
-});
-
-const placeholderStyle = css({
-  margin: 0,
-  padding: "0.45rem 0.6rem",
-  border: `2px dashed ${color.line}`,
-  borderRadius: radius.md,
-  color: color.muted,
-  fontSize: "0.85rem !important",
-  lineHeight: "1.6 !important",
-});
 
 const checksStyle = css({
   display: "grid",

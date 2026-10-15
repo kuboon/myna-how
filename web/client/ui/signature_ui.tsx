@@ -14,6 +14,29 @@ import { art, color, font, radius } from "../tokens.ts";
 export const ALGORITHM = { name: "ECDSA", namedCurve: "P-256" } as const;
 export const SIGN = { name: "ECDSA", hash: "SHA-256" } as const;
 
+/**
+ * J-LIS's key pair in these pictures. It is fixed, not made on a button press, because J-LIS's
+ * keys exist long before any card is made and sign every card's certificate. It is a key made for
+ * this site and written here in the open — the real J-LIS secret key never leaves J-LIS.
+ */
+export const JLIS_PUBLIC =
+  "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE2eNwtyzGC2krNC0PY6jcvE35ipiYWEpwV+xSE36ai7N+yUWmczxD3xg51NDoKhtknGmJO8wxLq8UJAIaxRJggg==";
+
+const JLIS_SECRET: JsonWebKey = {
+  kty: "EC",
+  crv: "P-256",
+  d: "Wyg_TEYacYZjrU9AJ-D9ibeD7U_sYMMJz2uHyG7Ea0g",
+  x: "2eNwtyzGC2krNC0PY6jcvE35ipiYWEpwV-xSE36ai7M",
+  y: "fslFpnM8Q98YOdTQ6CobZJxpiTvMMS6vFCQCGsUSYII",
+};
+
+/** J-LIS's secret key, loaded so that it cannot be read back out. */
+export function jlisSecretKey(): Promise<CryptoKey> {
+  return crypto.subtle.importKey("jwk", JLIS_SECRET, ALGORITHM, false, [
+    "sign",
+  ]);
+}
+
 /** How long the "making a signature" animation plays. */
 export const SIGNING_MS = 1600;
 
@@ -32,6 +55,39 @@ export function fromBase64(text: string): Uint8Array<ArrayBuffer> {
     return Uint8Array.fromBase64(clean) as Uint8Array<ArrayBuffer>;
   }
   return Uint8Array.from(atob(clean), (c) => c.charCodeAt(0));
+}
+
+/** A signature check that answers no, rather than throwing, when the inputs are not even the right shape. */
+export async function safeVerify(
+  key: CryptoKey,
+  signature: string,
+  data: string,
+): Promise<boolean> {
+  try {
+    return await crypto.subtle.verify(
+      SIGN,
+      key,
+      fromBase64(signature),
+      new TextEncoder().encode(data),
+    );
+  } catch {
+    return false;
+  }
+}
+
+/** A public key from its base64 text, or null when the text is not one. */
+export async function importPublic(text: string): Promise<CryptoKey | null> {
+  try {
+    return await crypto.subtle.importKey(
+      "spki",
+      fromBase64(text),
+      ALGORITHM,
+      false,
+      ["verify"],
+    );
+  } catch {
+    return null;
+  }
 }
 
 export function PersonHead(
@@ -370,3 +426,50 @@ export const captionStyle = css({
 export const problemStyle = css({ background: art.softRed, color: art.ng });
 
 export const footStyle = css({ display: "flex", justifyContent: "flex-end" });
+
+/** A key that stays sealed inside something — the card's chip, J-LIS — shown but never readable. */
+export const sealedBoxStyle = css({
+  display: "flex",
+  flexDirection: "column",
+  gap: "0.35rem",
+  padding: "0.7rem 0.8rem",
+  borderRadius: radius.md,
+  background: color.accent,
+  color: color.onAccent,
+  "& small": { fontSize: "0.8rem", lineHeight: 1.6, opacity: 0.9 },
+});
+
+export const sealedBusyStyle = css({
+  animation: `use-glow ${SIGNING_MS / 2}ms ease-in-out 2`,
+});
+
+export const sealedHeadStyle = css({
+  display: "flex",
+  alignItems: "center",
+  gap: "0.35rem",
+  fontFamily: font.round,
+  fontWeight: 800,
+  fontSize: "0.9rem",
+});
+
+export const sealedKeyStyle = css({
+  display: "flex",
+  alignItems: "center",
+  gap: "0.35rem",
+  padding: "0.4rem 0.6rem",
+  borderRadius: radius.md,
+  background: art.goldLight,
+  color: art.ink,
+  fontWeight: 700,
+  fontSize: "0.85rem",
+});
+
+export const placeholderStyle = css({
+  margin: 0,
+  padding: "0.45rem 0.6rem",
+  border: `2px dashed ${color.line}`,
+  borderRadius: radius.md,
+  color: color.muted,
+  fontSize: "0.85rem !important",
+  lineHeight: "1.6 !important",
+});

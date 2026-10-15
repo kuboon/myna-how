@@ -304,6 +304,16 @@ Deno.test({
           }),
       );
       assertEquals(official, ["カードで電子署名を作る"]);
+      const certificate = await page.$$eval(
+        "section[aria-label*='電子証明書を出す'] button:not([disabled])",
+        (els) =>
+          els.map((e) => {
+            const c = e.cloneNode(true) as Element;
+            c.querySelectorAll("rt").forEach((r) => r.remove());
+            return (c.textContent ?? "").trim();
+          }),
+      );
+      assertEquals(certificate, ["あなたのカードを作る"]);
     });
   },
 });
