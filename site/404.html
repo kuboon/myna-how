@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>移転しました — マイナンバーカードのひみつ</title>
+<link rel="canonical" href="https://zukai.kbn.one/myna">
+<style>body{font-family:system-ui,sans-serif;max-width:40rem;margin:4rem auto;padding:0 1rem;line-height:1.8}</style>
+</head>
+<body>
+<h1>移転しました</h1>
+<p>マイナンバーカードのひみつは、zukai.kbn.one に移転しました。</p>
+<p><a id="to" href="https://zukai.kbn.one/myna">https://zukai.kbn.one/myna</a></p>
+<script>
+  // 章のページ（/inside など）から来たときは、移転先の同じ章を指す。
+  const path = location.pathname.replace(/^\/myna-how/, "").replace(/\.html$/, "").replace(/\/$/, "");
+  if (/^\/[a-z-]+$/.test(path) && path !== "/index") {
+    const a = document.getElementById("to");
+    a.href = a.textContent = "https://zukai.kbn.one/myna" + path;
+  }
+</script>
+</body>
+</html>
