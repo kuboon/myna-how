@@ -17,7 +17,8 @@ jobs:
   pages:
     uses: kuboon/workflows/.github/workflows/github-page-with-preview.yaml@main
     with:
-      # The site is now just the "移転しました" page in site/. `mkdir -p` keeps the build working
-      # for a checkout that has no site/ yet.
-      build-command: mkdir -p site
+      # The site is now just the "移転しました" page in site/. The workflow also builds `main` with
+      # this command for a PR preview, and a `main` from before the move has no site/: build the old
+      # site there instead, so the live site stays up until this lands.
+      build-command: "[ -d site ] || (mise run build && mv web/dist site)"
       dist-dir: site
